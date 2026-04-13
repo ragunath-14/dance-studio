@@ -127,6 +127,27 @@
   color: #ef4444;
 }
 
+.amount-hint {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+.amount-hint.warning {
+  color: #f97316;
+}
+
+.amount-hint.success {
+  color: #22c55e;
+}
+
+.table-balance-hint {
+  font-size: 10px;
+  color: #ef4444;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
 .contact-info {
   display: flex;
   flex-direction: column;
@@ -140,6 +161,21 @@
 
 .contact-info .phone {
   font-weight: 500;
+}
+
+.pending-badge {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.amount.due {
+  color: #ef4444;
+  font-weight: 700;
 }
 
 .dance-info {

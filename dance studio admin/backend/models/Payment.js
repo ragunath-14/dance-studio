@@ -5,7 +5,8 @@ const PaymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   date: { type: Date, default: Date.now },
   method: { type: String },
-  purpose: { type: String }
+  purpose: { type: String },
+  remainingFees: { type: Number, default: 0 }
 });
 
 module.exports = mongoose.model('Payment', PaymentSchema);

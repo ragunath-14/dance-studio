@@ -2,9 +2,20 @@ import React, { useState, useMemo } from 'react';
 import Button from '../ui/Button';
 import { Search, User } from 'lucide-react';
 
-const PaymentForm = ({ formData, setFormData, students, onSubmit, onCancel }) => {
-  const [studentSearch, setStudentSearch] = useState('');
+const PaymentForm = ({ formData, setFormData, students, currentDebt, isEditing, onSubmit, onCancel }) => {
+  const initialStudentName = useMemo(() => {
+    if (!formData.studentId) return '';
+    const student = students.find(s => s._id === formData.studentId);
+    return student ? (student.studentName || student.name) : '';
+  }, [formData.studentId, students]);
+
+  const [studentSearch, setStudentSearch] = useState(initialStudentName);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Update search box when student selection changes (e.g. when opening edit modal)
+  React.useEffect(() => {
+    setStudentSearch(initialStudentName);
+  }, [initialStudentName]);
 
   const filteredStudents = useMemo(() => {
     if (!studentSearch.trim()) return [];
@@ -86,9 +97,20 @@ const PaymentForm = ({ formData, setFormData, students, onSubmit, onCancel }) =>
           <input 
             type="number" 
             value={formData.amount} 
-            onChange={(e) => setFormData({...formData, amount: e.target.value})} 
+            onChange={(e) => {
+              const amount = Number(e.target.value);
+              const remaining = Math.max(0, currentDebt - amount);
+              setFormData({ ...formData, amount: e.target.value, remainingFees: remaining });
+            }} 
             required 
           />
+          {!isEditing && currentDebt > 0 && (
+            <div className={`amount-hint ${formData.remainingFees > 0 ? 'warning' : 'success'}`}>
+              {formData.remainingFees > 0 
+                ? `Remaining Balance: ₹${formData.remainingFees}`
+                : 'Full Payment - Balance Cleared'}
+            </div>
+          )}
         </div>
         <div className="form-group">
           <label>Payment Date</label>

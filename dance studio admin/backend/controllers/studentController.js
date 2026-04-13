@@ -38,6 +38,11 @@ exports.createStudent = async (req, res) => {
 
     const student = new Student(data);
     const newStudent = await student.save();
+    
+    // Emit real-time update
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'student', action: 'create' });
+    
     res.status(201).json(newStudent);
   } catch (err) {
     console.error('Registration error:', err);
@@ -49,6 +54,11 @@ exports.createStudent = async (req, res) => {
 exports.updateStudent = async (req, res) => {
   try {
     const updatedStudent = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    
+    // Emit real-time update
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'student', action: 'update' });
+
     res.json(updatedStudent);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -59,6 +69,11 @@ exports.updateStudent = async (req, res) => {
 exports.deleteStudent = async (req, res) => {
   try {
     await Student.findByIdAndDelete(req.params.id);
+    
+    // Emit real-time update
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'student', action: 'delete' });
+
     res.json({ message: 'Student deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

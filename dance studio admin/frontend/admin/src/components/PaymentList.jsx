@@ -20,8 +20,13 @@ const PaymentList = () => {
     studentId: '',
     amount: '',
     method: 'Cash',
-    purpose: 'Monthly Fee'
+    purpose: 'Monthly Fee',
+    date: '',
+    remainingFees: 0
   });
+  const [currentDebt, setCurrentDebt] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,44 +43,42 @@ const PaymentList = () => {
 
   const unpaidStudents = useMemo(() => {
     const today = new Date();
+    const MONTHLY_FEE = 1500; // Standard fee
     
-    return students.filter(student => {
-      // FIX: Use createdAt if available, then joinDate, default to today
+    return students.map(student => {
       const rawJoinDate = student.createdAt || student.joinDate || new Date().toISOString();
       const joinDate = new Date(rawJoinDate);
       
-      // Calculate current cycle start date
-      const cycleDate = new Date(joinDate);
-      let monthsPassed = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth());
+      // Total cycles expected since joining (including current month if day has passed)
+      let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
       
-      const thisMonthAnniversary = new Date(today.getFullYear(), today.getMonth(), joinDate.getDate());
-      if (thisMonthAnniversary.getMonth() !== today.getMonth()) {
-        thisMonthAnniversary.setDate(0); 
+      // If today is before join day of the month, the current month's cycle hasn't started yet
+      if (today.getDate() < joinDate.getDate()) {
+        totalCycles--;
       }
 
-      if (today < thisMonthAnniversary) {
-        monthsPassed--;
-      }
-
-      cycleDate.setMonth(cycleDate.getMonth() + monthsPassed);
-      if (cycleDate.getDate() !== joinDate.getDate()) {
-        cycleDate.setDate(0);
-      }
-      const currentCycleStartDate = cycleDate;
-
-      // Check if student has a payment record in the current cycle
-      const hasPaidForCurrentCycle = payments.some(p => {
-        const paymentDate = new Date(p.date);
+      // Count equivalent months paid by summing total amounts
+      const totalPaidAmount = payments.filter(p => {
         const pStudentId = p.studentId?._id || p.studentId;
-        return pStudentId === student._id && paymentDate >= currentCycleStartDate;
-      });
+        return pStudentId === student._id && p.purpose === 'Monthly Fee';
+      }).reduce((sum, p) => sum + (p.amount || 0), 0);
 
+      const totalExpectedAmount = totalCycles * MONTHLY_FEE;
+      const totalDue = Math.max(0, totalExpectedAmount - totalPaidAmount);
+      const pendingMonths = Math.ceil(totalDue / MONTHLY_FEE);
+
+      return {
+        ...student,
+        pendingMonths,
+        totalDue
+      };
+    }).filter(student => {
       const studentName = student.studentName || student.name || '';
       const matchesSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                              (student.email || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-      return !hasPaidForCurrentCycle && matchesSearch;
-    });
+      return student.pendingMonths > 0 && matchesSearch;
+    }).sort((a, b) => b.totalDue - a.totalDue); // Show highest debtors first
   }, [students, payments, searchTerm]);
 
 
@@ -103,26 +106,44 @@ const PaymentList = () => {
     e.preventDefault();
     
     try {
-      await axios.post(`${API_URL}/payments`, formData);
+      if (isEditing) {
+        await axios.put(`${API_URL}/payments/${editingId}`, formData);
+      } else {
+        await axios.post(`${API_URL}/payments`, formData);
+      }
       await refreshData();
       
       setActiveTab('paid');
-      setShowModal(false);
-      setFormData({ studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee' });
+      closeModals();
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Failed to record payment. Please try again.';
+      const errorMsg = err.response?.data?.message || 'Failed to save payment. Please try again.';
       alert(errorMsg);
       console.error('Payment error:', err);
     }
+  };
+
+  const handlePay = (student) => {
+    setCurrentDebt(student.totalDue);
+    setFormData({
+      studentId: student._id,
+      amount: student.totalDue,
+      method: 'Cash',
+      purpose: 'Monthly Fee',
+      date: new Date().toISOString().split('T')[0],
+      remainingFees: 0
+    });
+    setIsEditing(false);
+    setShowModal(true);
   };
 
   const handleQuickPay = async (student) => {
     try {
       await axios.post(`${API_URL}/payments`, {
         studentId: student._id,
-        amount: 1500,
+        amount: student.totalDue || 1500, // Pay full amount due
         method: 'Cash',
         purpose: 'Monthly Fee',
+        remainingFees: 0,
         date: new Date().toISOString()
       });
 
@@ -147,9 +168,25 @@ const PaymentList = () => {
   };
 
 
+  const handleEdit = (payment) => {
+    setFormData({
+      studentId: payment.studentId?._id || payment.studentId,
+      amount: payment.amount,
+      method: payment.method || 'Cash',
+      purpose: payment.purpose || 'Monthly Fee',
+      date: payment.date ? payment.date.split('T')[0] : '',
+      remainingFees: payment.remainingFees || 0
+    });
+    setEditingId(payment._id);
+    setIsEditing(true);
+    setShowModal(true);
+  };
+
   const closeModals = () => {
     setShowModal(false);
-    setFormData({ studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee' });
+    setIsEditing(false);
+    setEditingId(null);
+    setFormData({ studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee', date: '' });
   };
 
   return (
@@ -200,9 +237,9 @@ const PaymentList = () => {
             ) : (
               <tr>
                 <th>Student Name</th>
-                <th>Email</th>
                 <th>Phone</th>
-                <th>Dance Style</th>
+                <th>Pending</th>
+                <th>Total Due</th>
                 <th>Actions</th>
               </tr>
             )}
@@ -217,7 +254,12 @@ const PaymentList = () => {
             ) : activeTab === 'paid' ? (
               paginatedPayments.length > 0 ? (
                 paginatedPayments.map((payment) => (
-                  <PaymentRow key={payment._id} payment={payment} onDelete={handleDelete} />
+                  <PaymentRow 
+                    key={payment._id} 
+                    payment={payment} 
+                    onDelete={handleDelete} 
+                    onEdit={handleEdit} 
+                  />
                 ))
               ) : (
                 <tr>
@@ -231,18 +273,27 @@ const PaymentList = () => {
                 paginatedUnpaid.map((student) => (
                   <tr key={student._id}>
                     <td>{student.studentName || student.name}</td>
-                    <td>{student.email}</td>
                     <td>{student.phone}</td>
-                    <td className="hide-mobile">{student.danceStyle}</td>
+                    <td><span className="pending-badge">{student.pendingMonths} month{student.pendingMonths > 1 ? 's' : ''}</span></td>
+                    <td className="amount due">₹{student.totalDue}</td>
                     <td>
-
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        onClick={() => handleQuickPay(student)}
-                      >
-                        <Check size={14} /> Mark as Paid
-                      </Button>
+                      <div className="action-buttons">
+                        <Button 
+                          variant="primary" 
+                          size="sm" 
+                          onClick={() => handlePay(student)}
+                        >
+                          Pay
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={() => handleQuickPay(student)}
+                          title="Clear Full Amount"
+                        >
+                          <Check size={14} /> Clear All
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -267,12 +318,14 @@ const PaymentList = () => {
       <Modal 
         isOpen={showModal} 
         onClose={closeModals} 
-        title="Record New Payment"
+        title={isEditing ? "Edit Payment Detail" : "Record New Payment"}
       >
         <PaymentForm 
           formData={formData} 
           setFormData={setFormData} 
           students={students} 
+          currentDebt={currentDebt}
+          isEditing={isEditing}
           onSubmit={handleSubmit} 
           onCancel={closeModals} 
         />

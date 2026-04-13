@@ -22,6 +22,10 @@ const PaymentSchema = new mongoose.Schema({
   purpose: { 
     type: String,
     trim: true
+  },
+  remainingFees: { 
+    type: Number, 
+    default: 0 
   }
 });
 

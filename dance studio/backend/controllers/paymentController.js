@@ -110,3 +110,51 @@ exports.deletePayment = async (req, res) => {
     });
   }
 };
+
+// @desc    Update a payment
+// @route   PUT /api/payments/:id
+// @access  Private (Admin)
+exports.updatePayment = async (req, res) => {
+  try {
+    const updatedPayment = await Payment.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    ).populate('studentId', 'studentName');
+
+    if (!updatedPayment) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Payment not found.' 
+      });
+    }
+
+    res.json({
+      success: true,
+      data: updatedPayment
+    });
+
+  } catch (err) {
+    console.error('Error updating payment:', err);
+    
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ 
+        success: false, 
+        message: messages.join('. ') 
+      });
+    }
+
+    if (err.name === 'CastError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid payment ID format.' 
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error. Could not update payment.' 
+    });
+  }
+};
