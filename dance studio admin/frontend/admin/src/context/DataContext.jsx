@@ -14,22 +14,24 @@ export const useData = () => {
 export const DataProvider = ({ children }) => {
   const [students, setStudents] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchAllData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const [stuRes, payRes] = await Promise.all([
+      const [stuRes, payRes, regRes] = await Promise.all([
         axios.get(`${API_URL}/students`),
-        axios.get(`${API_URL}/payments`)
+        axios.get(`${API_URL}/payments`),
+        axios.get(`${API_URL}/registrations/pending`)
       ]);
       
       setStudents(stuRes.data);
       setPayments(payRes.data);
+      setRegistrations(regRes.data);
     } catch (err) {
       console.error('API connection failed.', err.message);
-      setStudents([]);
-      setPayments([]);
+      // Don't clear state if refresh fails, keep old data
     } finally {
       if (!silent) setLoading(false);
     }
@@ -40,32 +42,72 @@ export const DataProvider = ({ children }) => {
     fetchAllData();
 
     // Connect to Socket.io for real-time updates
-    const socketUrl = API_URL.replace('/api', '');
+    const socketUrl = API_URL.endsWith('/api')
+      ? API_URL.slice(0, -4)
+      : API_URL.replace(/\/api$/, '');
     const socket = io(socketUrl);
 
     socket.on('dataChanged', (data) => {
-      console.log('⚡ Real-time update received:', data);
       fetchAllData(true); // Silent refresh
     });
 
-    // Fallback polling every 30 seconds (can be slower now since we have sockets)
-    const interval = setInterval(() => {
-      fetchAllData(true);
-    }, 30000);
+    socket.on('registrationApproved', () => {
+       fetchAllData(true);
+    });
 
     return () => {
       socket.disconnect();
-      clearInterval(interval);
     };
   }, []);
 
-
-
   const refreshData = () => fetchAllData();
 
+  const approveRegistration = async (id) => {
+    try {
+      await axios.post(`${API_URL}/registrations/${id}/approve`);
+      fetchAllData(true);
+      return { success: true };
+    } catch (err) {
+      console.error('Approval failed:', err);
+      return { success: false, message: err.response?.data?.message || err.message };
+    }
+  };
+
+  const rejectRegistration = async (id) => {
+    try {
+      await axios.post(`${API_URL}/registrations/${id}/reject`);
+      fetchAllData(true);
+      return { success: true };
+    } catch (err) {
+      console.error('Rejection failed:', err);
+      return { success: false, message: err.message };
+    }
+  };
+
+  const toggleStudentStatus = async (id) => {
+    try {
+      const res = await axios.patch(`${API_URL}/students/${id}/toggle-status`);
+      fetchAllData(true);
+      return { success: true, message: res.data.message };
+    } catch (err) {
+      console.error('Toggle status failed:', err);
+      return { success: false, message: err.response?.data?.message || err.message };
+    }
+  };
 
   return (
-    <DataContext.Provider value={{ students, payments, loading, refreshData, setStudents, setPayments }}>
+    <DataContext.Provider value={{ 
+      students, 
+      payments, 
+      registrations,
+      loading, 
+      refreshData, 
+      setStudents, 
+      setPayments,
+      approveRegistration,
+      rejectRegistration,
+      toggleStudentStatus
+    }}>
       {children}
     </DataContext.Provider>
   );

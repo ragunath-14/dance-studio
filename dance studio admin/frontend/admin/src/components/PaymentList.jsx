@@ -1,18 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
-import { Plus, Search, Check } from 'lucide-react';
+import { Plus, Search, Check, Bell, History, X, CreditCard, Calendar, TrendingDown } from 'lucide-react';
 import API_URL from '../config';
 import { useData } from '../context/DataContext';
 import PaymentRow from './payments/PaymentRow';
 import PaymentForm from './payments/PaymentForm';
 import Modal from './ui/Modal';
+import ConfirmDialog from './ui/ConfirmDialog';
 import Button from './ui/Button';
 import SkeletonRow from './ui/SkeletonRow';
 import Pagination from './ui/Pagination';
 import './List.css';
 
 const PaymentList = () => {
-  const { payments, students, loading, refreshData, setPayments } = useData();
+  const { payments, students, loading, refreshData } = useData();
   const [activeTab, setActiveTab] = useState('paid');
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +28,10 @@ const PaymentList = () => {
   const [currentDebt, setCurrentDebt] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [alertState, setAlertState] = useState({ loading: false, message: '', type: '', results: [] });
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, paymentId: null });
+  const [confirmAlerts, setConfirmAlerts] = useState(false);
+  const [historyStudent, setHistoryStudent] = useState(null); // student object for history modal
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,8 +48,19 @@ const PaymentList = () => {
 
   const unpaidStudents = useMemo(() => {
     const today = new Date();
-    const MONTHLY_FEE = 1500; // Standard fee
+    const getMonthlyFee = (classType) => classType === 'Fitness Class' ? 2500 : 3500;
     
+    // Group monthly payments per student upfront (O(M)) to avoid O(N*M) nested loops
+    const paymentsByStudent = new Map();
+    for (const p of payments) {
+      if (p.purpose === 'Monthly Fee') {
+        const pStudentId = p.studentId?._id || p.studentId;
+        if (pStudentId) {
+          paymentsByStudent.set(pStudentId.toString(), (paymentsByStudent.get(pStudentId.toString()) || 0) + (p.amount || 0));
+        }
+      }
+    }
+
     return students.map(student => {
       const rawJoinDate = student.createdAt || student.joinDate || new Date().toISOString();
       const joinDate = new Date(rawJoinDate);
@@ -57,15 +73,13 @@ const PaymentList = () => {
         totalCycles--;
       }
 
-      // Count equivalent months paid by summing total amounts
-      const totalPaidAmount = payments.filter(p => {
-        const pStudentId = p.studentId?._id || p.studentId;
-        return pStudentId === student._id && p.purpose === 'Monthly Fee';
-      }).reduce((sum, p) => sum + (p.amount || 0), 0);
+      // Count equivalent months paid by directly looking up from the map
+      const totalPaidAmount = paymentsByStudent.get(student._id.toString()) || 0;
 
-      const totalExpectedAmount = totalCycles * MONTHLY_FEE;
+      const fee = getMonthlyFee(student.classType);
+      const totalExpectedAmount = totalCycles * fee;
       const totalDue = Math.max(0, totalExpectedAmount - totalPaidAmount);
-      const pendingMonths = Math.ceil(totalDue / MONTHLY_FEE);
+      const pendingMonths = Math.ceil(totalDue / fee);
 
       return {
         ...student,
@@ -101,6 +115,39 @@ const PaymentList = () => {
   React.useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, activeTab]);
+
+  // Clear alert banner when switching tabs
+  React.useEffect(() => {
+    setAlertState({ loading: false, message: '', type: '', results: [] });
+  }, [activeTab]);
+
+  // ── Trigger today's scheduled fee-alert job immediately (manual test) ────────
+  const handleSendAlerts = () => {
+    setConfirmAlerts(true);
+  };
+
+  const executeSendAlerts = async () => {
+    setConfirmAlerts(false);
+    setAlertState({ loading: true, message: '', type: '', results: [] });
+    try {
+      // Use the send-pending-alerts endpoint which returns detailed per-student results
+      const res = await axios.post(`${API_URL}/payments/send-pending-alerts`);
+      const data = res.data;
+      setAlertState({
+        loading: false,
+        message: data.message,
+        type: 'success',
+        results: data.results || []
+      });
+    } catch (err) {
+      setAlertState({
+        loading: false,
+        message: err.response?.data?.message || 'Failed to trigger alert job.',
+        type: 'error',
+        results: []
+      });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -140,7 +187,7 @@ const PaymentList = () => {
     try {
       await axios.post(`${API_URL}/payments`, {
         studentId: student._id,
-        amount: student.totalDue || 1500, // Pay full amount due
+        amount: student.totalDue || (student.classType === 'Fitness Class' ? 2500 : 3500), // Pay full amount due
         method: 'Cash',
         purpose: 'Monthly Fee',
         remainingFees: 0,
@@ -155,9 +202,13 @@ const PaymentList = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this payment?')) return;
-    
+  const handleDelete = (id) => {
+    setConfirmDelete({ open: true, paymentId: id });
+  };
+
+  const executeDelete = async () => {
+    const id = confirmDelete.paymentId;
+    setConfirmDelete({ open: false, paymentId: null });
     try {
       await axios.delete(`${API_URL}/payments/${id}`);
       await refreshData();
@@ -190,6 +241,32 @@ const PaymentList = () => {
     setFormData({ studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee', date: '', remainingFees: 0 });
   };
 
+  // ── Student Payment History ────────────────────────────────────────────────
+  const getStudentHistory = (student) => {
+    const getMonthlyFee = (ct) => ct === 'Fitness Class' ? 2500 : 3500;
+    const today = new Date();
+    const studentIdStr = student._id?.toString();
+
+    const studentPayments = payments
+      .filter(p => {
+        const pid = p.studentId?._id?.toString() || p.studentId?.toString();
+        return pid === studentIdStr;
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const joinDate = new Date(student.createdAt || student.joinDate || today);
+    let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
+    if (today.getDate() < joinDate.getDate()) totalCycles--;
+    if (totalCycles < 0) totalCycles = 0;
+
+    const fee = getMonthlyFee(student.classType);
+    const totalPaid = studentPayments.reduce((s, p) => s + (p.amount || 0), 0);
+    const totalExpected = totalCycles * fee;
+    const totalDue = Math.max(0, totalExpected - totalPaid);
+
+    return { studentPayments, totalPaid, totalExpected, totalDue, fee, totalCycles, joinDate };
+  };
+
   return (
     <div className="payment-list animate-fade-in">
       <div className="list-header">
@@ -218,10 +295,64 @@ const PaymentList = () => {
             </button>
           </div>
         </div>
-        <Button onClick={() => setShowModal(true)} icon={Plus}>
-          Record Payment
-        </Button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {activeTab === 'unpaid' && unpaidStudents.length > 0 && (
+            <Button
+              id="send-pending-alerts-btn"
+              variant="secondary"
+              onClick={handleSendAlerts}
+              disabled={alertState.loading}
+              icon={alertState.loading ? null : Bell}
+            >
+              {alertState.loading ? 'Sending...' : '🔔 Run Alerts Now'}
+            </Button>
+          )}
+          <Button onClick={() => setShowModal(true)} icon={Plus}>
+            Record Payment
+          </Button>
+        </div>
       </div>
+
+      {/* Alert feedback banner */}
+      {alertState.message && (
+        <div style={{
+          margin: '0 0 12px 0',
+          padding: '10px 16px',
+          borderRadius: '8px',
+          fontSize: '0.875rem',
+          background: alertState.type === 'success' ? '#d1fae5' : '#fee2e2',
+          color:      alertState.type === 'success' ? '#065f46'  : '#991b1b',
+          border:     `1px solid ${alertState.type === 'success' ? '#6ee7b7' : '#fca5a5'}`
+        }}>
+          {alertState.type === 'success' ? '✅' : '❌'} {alertState.message}
+          {alertState.results.length > 0 && (
+            <ul style={{ margin: '6px 0 0 0', paddingLeft: '20px' }}>
+              {alertState.results.map(r => (
+                <li key={r.studentId}>
+                  <strong>{r.studentName}</strong> — ₹{r.totalDue} ({r.pendingMonths} month{r.pendingMonths > 1 ? 's' : ''})
+                  &nbsp;{r.alertSent ? '✅ Sent' : `⚠️ Not sent${r.alertReason ? ` (${r.alertReason})` : ''}`}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* Auto-schedule info note */}
+      {activeTab === 'unpaid' && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '7px 14px', borderRadius: '8px', marginBottom: '10px',
+          background: '#eff6ff', border: '1px solid #bfdbfe',
+          color: '#1d4ed8', fontSize: '0.8rem'
+        }}>
+          <Bell size={14} />
+          <span>
+            <strong>Auto-alerts are active.</strong> WhatsApp reminders are sent automatically at 06:00 AM on each student's monthly fee-due date.
+            Use <em>Run Alerts Now</em> to trigger today's check immediately.
+          </span>
+        </div>
+      )}
 
       <div className="table-container">
         <table className="data-table">
@@ -259,7 +390,11 @@ const PaymentList = () => {
                     key={payment._id} 
                     payment={payment} 
                     onDelete={handleDelete} 
-                    onEdit={handleEdit} 
+                    onEdit={handleEdit}
+                    onViewHistory={(studentId) => {
+                      const s = students.find(st => st._id === (payment.studentId?._id || payment.studentId));
+                      if (s) setHistoryStudent(s);
+                    }}
                   />
                 ))
               ) : (
@@ -273,7 +408,12 @@ const PaymentList = () => {
               paginatedUnpaid.length > 0 ? (
                 paginatedUnpaid.map((student) => (
                   <tr key={student._id}>
-                    <td>{student.studentName || student.name}</td>
+                    <td>
+                      <button className="student-name-link" onClick={() => setHistoryStudent(student)}>
+                        {student.studentName || student.name}
+                      </button>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{student.classType}</div>
+                    </td>
                     <td>{student.phone}</td>
                     <td><span className="pending-badge">{student.pendingMonths} month{student.pendingMonths > 1 ? 's' : ''}</span></td>
                     <td className="amount due">₹{student.totalDue}</td>
@@ -294,6 +434,13 @@ const PaymentList = () => {
                         >
                           <Check size={14} /> Clear All
                         </Button>
+                        <Button
+                          variant="icon"
+                          size="sm"
+                          onClick={() => setHistoryStudent(student)}
+                          title="View Payment History"
+                          icon={History}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -325,12 +472,110 @@ const PaymentList = () => {
           formData={formData} 
           setFormData={setFormData} 
           students={students} 
+          payments={payments}
           currentDebt={currentDebt}
           isEditing={isEditing}
           onSubmit={handleSubmit} 
           onCancel={closeModals} 
         />
       </Modal>
+
+      {/* Confirm: Mark payment as unpaid (delete) */}
+      <ConfirmDialog
+        isOpen={confirmDelete.open}
+        title="Mark as Unpaid"
+        message="This will delete the payment record. The student will appear in the Unpaid list again."
+        confirmText="Yes, Mark Unpaid"
+        cancelText="Cancel"
+        danger={true}
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmDelete({ open: false, paymentId: null })}
+      />
+
+      {/* Confirm: Send WhatsApp fee alerts */}
+      <ConfirmDialog
+        isOpen={confirmAlerts}
+        title="Send Fee Alerts"
+        message={`Send WhatsApp pending-fee reminders to students whose fee day is TODAY and have pending fees?`}
+        confirmText="Yes, Send Alerts"
+        cancelText="Cancel"
+        onConfirm={executeSendAlerts}
+        onCancel={() => setConfirmAlerts(false)}
+      />
+
+      {/* ── Student Payment History Modal ────────────────────────────── */}
+      {historyStudent && (() => {
+        const { studentPayments, totalPaid, totalExpected, totalDue, fee, totalCycles, joinDate } = getStudentHistory(historyStudent);
+        return (
+          <div className="history-overlay" onClick={() => setHistoryStudent(null)}>
+            <div className="history-modal" onClick={e => e.stopPropagation()}>
+              <div className="history-header">
+                <div>
+                  <h2>{historyStudent.studentName || historyStudent.name}</h2>
+                  <p>{historyStudent.classType} · Joined {joinDate.toLocaleDateString('en-GB')}</p>
+                </div>
+                <button className="history-close-btn" onClick={() => setHistoryStudent(null)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="history-summary">
+                <div className="hs-card green">
+                  <CreditCard size={18} />
+                  <div>
+                    <span>Total Paid</span>
+                    <strong>₹{totalPaid.toLocaleString()}</strong>
+                  </div>
+                </div>
+                <div className="hs-card orange">
+                  <Calendar size={18} />
+                  <div>
+                    <span>Months Billed</span>
+                    <strong>{totalCycles} month{totalCycles !== 1 ? 's' : ''} × ₹{fee}</strong>
+                  </div>
+                </div>
+                <div className={`hs-card ${totalDue > 0 ? 'red' : 'green'}`}>
+                  <TrendingDown size={18} />
+                  <div>
+                    <span>Pending Dues</span>
+                    <strong>{totalDue > 0 ? `₹${totalDue.toLocaleString()}` : 'Clear ✓'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="history-table-wrap">
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Method</th>
+                      <th>Purpose</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {studentPayments.length > 0 ? studentPayments.map((p, i) => (
+                      <tr key={i}>
+                        <td>{new Date(p.date).toLocaleDateString('en-GB')}</td>
+                        <td style={{ color: '#4CAF50', fontWeight: 700 }}>₹{p.amount.toLocaleString()}</td>
+                        <td>{p.method || '—'}</td>
+                        <td>{p.purpose || '—'}</td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan="4" className="text-center" style={{ padding: '24px', color: 'var(--text-muted)' }}>No payment records found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="history-footer">
+                <Button variant="primary" onClick={() => { setHistoryStudent(null); handlePay(historyStudent); }}>Record Payment</Button>
+                <Button variant="secondary" onClick={() => setHistoryStudent(null)}>Close</Button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

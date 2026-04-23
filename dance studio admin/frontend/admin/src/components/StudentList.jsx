@@ -6,17 +6,19 @@ import { useData } from '../context/DataContext';
 import StudentRow from './students/StudentRow';
 import StudentForm from './students/StudentForm';
 import Modal from './ui/Modal';
+import ConfirmDialog from './ui/ConfirmDialog';
 import Button from './ui/Button';
 import SkeletonRow from './ui/SkeletonRow';
 import Pagination from './ui/Pagination';
 import './List.css';
 
 const StudentList = () => {
-  const { students, payments, loading, refreshData, setStudents } = useData();
+  const { students, payments, loading, refreshData, setStudents, toggleStudentStatus } = useData();
   const [activeTab, setActiveTab] = useState('Regular Class');
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [confirmState, setConfirmState] = useState({ open: false, studentId: null });
   const [formData, setFormData] = useState({
     studentName: '',
     email: '',
@@ -58,27 +60,24 @@ const StudentList = () => {
   const stats = useMemo(() => {
     return {
       regular: students.filter(s => s.classType === 'Regular Class').length,
-      summer: students.filter(s => s.classType === 'Summer Class').length
+      summer: students.filter(s => s.classType === 'Summer Class').length,
+      fitness: students.filter(s => s.classType === 'Fitness Class').length
     };
   }, [students]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Save current editing state to use in catch block if needed
     const wasEditing = editingStudent;
     
-    // Background Persistence
     try {
       if (wasEditing) {
         await axios.put(`${API_URL}/students/${wasEditing._id}`, formData);
       } else {
         await axios.post(`${API_URL}/students`, formData);
       }
-      // Refresh data from backend after success
-      await refreshData();
       
-      // Close modal only on success
+      await refreshData();
       setShowModal(false);
       setEditingStudent(null);
       setFormData({ 
@@ -87,35 +86,23 @@ const StudentList = () => {
         createdAt: new Date().toISOString().split('T')[0] 
       });
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Failed to save to database. Please refresh and try again.';
+      const errorMsg = err.response?.data?.message || 'Failed to save to database. Please check console and try again.';
       alert(errorMsg);
-      console.error('Persistence error:', err);
     }
   };
 
-
-  const handleSwitch = async (student) => {
-    const newClassType = student.classType === 'Regular Class' ? 'Summer Class' : 'Regular Class';
-    
-    try {
-      await axios.put(`${API_URL}/students/${student._id}`, { ...student, classType: newClassType });
-      await refreshData();
-      setActiveTab(newClassType);
-    } catch (err) {
-      alert('Failed to switch class type.');
-      console.error('Class switch error:', err);
-    }
+  const handleDelete = (id) => {
+    setConfirmState({ open: true, studentId: id });
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this student?')) return;
-
+  const confirmDelete = async () => {
+    const id = confirmState.studentId;
+    setConfirmState({ open: false, studentId: null });
     try {
       await axios.delete(`${API_URL}/students/${id}`);
       await refreshData();
     } catch (err) {
-      console.error('Error deleting student:', err);
-      alert('Failed to delete student.');
+      alert('Failed to delete student. Check server connection.');
     }
   };
 
@@ -172,6 +159,12 @@ const StudentList = () => {
             >
               Summer ({stats.summer})
             </button>
+            <button 
+              className={`tab-btn ${activeTab === 'Fitness Class' ? 'active' : ''}`}
+              onClick={() => setActiveTab('Fitness Class')}
+            >
+              Fitness ({stats.fitness})
+            </button>
           </div>
         </div>
         <Button onClick={() => { 
@@ -209,7 +202,7 @@ const StudentList = () => {
                   payments={payments}
                   onEdit={openEditModal} 
                   onDelete={handleDelete} 
-                  onSwitch={handleSwitch}
+                  onToggleStatus={toggleStudentStatus}
                 />
               ))
             ) : (
@@ -242,6 +235,17 @@ const StudentList = () => {
           isEditing={!!editingStudent}
         />
       </Modal>
+
+      <ConfirmDialog
+        isOpen={confirmState.open}
+        title="Delete Student"
+        message="Are you sure you want to permanently delete this student? This cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        danger={true}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmState({ open: false, studentId: null })}
+      />
     </div>
   );
 };

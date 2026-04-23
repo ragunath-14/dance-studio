@@ -38,7 +38,7 @@ const StudentForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }) =
           <label>WhatsApp Number</label>
           <input 
             type="text" 
-            value={formData.whatsappNumber} 
+            value={formData.whatsappNumber || ''} 
             onChange={(e) => setFormData({...formData, whatsappNumber: e.target.value})} 
           />
         </div>
@@ -48,7 +48,7 @@ const StudentForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }) =
           <label>Email Address</label>
           <input 
             type="email" 
-            value={formData.email} 
+            value={formData.email || ''} 
             onChange={(e) => setFormData({...formData, email: e.target.value})} 
           />
         </div>
@@ -60,6 +60,7 @@ const StudentForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }) =
           >
             <option value="Regular Class">Regular Class</option>
             <option value="Summer Class">Summer Class</option>
+            <option value="Fitness Class">Fitness Class</option>
           </select>
         </div>
       </div>
@@ -67,7 +68,7 @@ const StudentForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }) =
         <div className="form-group">
           <label>Dance Style (Regular/Summer)</label>
           <select 
-            value={formData.danceStyle} 
+            value={formData.danceStyle || ''} 
             onChange={(e) => setFormData({...formData, danceStyle: e.target.value})}
           >
             <option value="">None</option>
@@ -81,7 +82,7 @@ const StudentForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }) =
         <div className="form-group">
           <label>Dance for Fitness</label>
           <select 
-            value={formData.danceForFitness} 
+            value={formData.danceForFitness || ''} 
             onChange={(e) => setFormData({...formData, danceForFitness: e.target.value})}
           >
             <option value="">None</option>

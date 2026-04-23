@@ -1,8 +1,11 @@
-import React, { useMemo } from 'react';
-import { Edit2, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Edit2, Trash2, CheckCircle, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import Button from '../ui/Button';
 
-const StudentRow = ({ student, payments, onEdit, onDelete, onSwitch }) => {
+const StudentRow = ({ student, payments, onEdit, onDelete, onToggleStatus }) => {
+  const [toggling, setToggling] = useState(false);
+  const isActive = student.isActive !== false; // default true for existing students
+
   const isPaid = useMemo(() => {
     const today = new Date();
     const rawJoinDate = student.createdAt || student.joinDate || new Date().toISOString();
@@ -31,16 +34,28 @@ const StudentRow = ({ student, payments, onEdit, onDelete, onSwitch }) => {
     });
   }, [student, payments]);
 
+  const handleToggle = async () => {
+    setToggling(true);
+    await onToggleStatus(student._id);
+    setToggling(false);
+  };
+
   return (
-    <tr>
+    <tr className={!isActive ? 'inactive-row' : ''}>
       <td>
         <div className="student-name-cell">
           {student.studentName || student.name}
-          {isPaid ? (
-            <span className="mini-badge paid"><CheckCircle size={12} /> Paid</span>
-          ) : (
-            <span className="mini-badge unpaid"><AlertCircle size={12} /> Unpaid</span>
-          )}
+          <div className="badge-row">
+            {isActive ? (
+              isPaid ? (
+                <span className="mini-badge paid"><CheckCircle size={12} /> Paid</span>
+              ) : (
+                <span className="mini-badge unpaid"><AlertCircle size={12} /> Unpaid</span>
+              )
+            ) : (
+              <span className="mini-badge inactive-badge">Inactive</span>
+            )}
+          </div>
         </div>
       </td>
       <td>
@@ -67,18 +82,26 @@ const StudentRow = ({ student, payments, onEdit, onDelete, onSwitch }) => {
       </td>
       <td>
         <div className="action-buttons">
-          <Button 
-            variant="icon" 
-            onClick={() => onSwitch(student)} 
-            icon={() => (
-              <span style={{ fontSize: '10px', fontWeight: 'bold' }}>
-                {student.classType === 'Regular Class' ? 'SUM' : 'REG'}
-              </span>
-            )} 
-            title={`Move to ${student.classType === 'Regular Class' ? 'Summer' : 'Regular'}`}
-          />
-          <Button variant="icon" onClick={() => onEdit(student)} icon={Edit2} />
-          <Button variant="icon" className="delete" onClick={() => onDelete(student._id)} icon={Trash2} />
+          <button 
+            className={`status-toggle-btn ${isActive ? 'active' : 'inactive'}`}
+            onClick={handleToggle}
+            disabled={toggling}
+            title={isActive ? 'Mark Inactive' : 'Mark Active'}
+          >
+            {toggling ? (
+              <span className="toggle-spinner"></span>
+            ) : isActive ? (
+              <><ToggleRight size={16} /> Active</>
+            ) : (
+              <><ToggleLeft size={16} /> Inactive</>
+            )}
+          </button>
+          <Button variant="icon" onClick={() => {
+            onEdit(student);
+          }} icon={Edit2} />
+          <Button variant="icon" className="delete" onClick={() => {
+            onDelete(student._id);
+          }} icon={Trash2} />
         </div>
       </td>
     </tr>

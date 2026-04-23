@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Bell } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { useData } from '../context/DataContext';
 import Sidebar from './Sidebar';
 import './Layout.css';
 
 const Layout = ({ children }) => {
+  const { registrations } = useData();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -24,6 +27,10 @@ const Layout = ({ children }) => {
       <main className="content">
         <header className="topbar">
           <h1>Admin Management</h1>
+          <NavLink to="/registrations" className="topbar-notification">
+            <Bell size={24} />
+            {registrations.length > 0 && <span className="notification-badge">{registrations.length}</span>}
+          </NavLink>
         </header>
         <div className="page-container">
           {children}

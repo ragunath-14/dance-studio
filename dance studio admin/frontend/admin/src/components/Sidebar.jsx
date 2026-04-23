@@ -1,11 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, UserPlus } from 'lucide-react';
+import { useData } from '../context/DataContext';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, onClose }) => {
+  const { registrations } = useData();
   const navLinks = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/registrations', icon: UserPlus, label: 'New Joiners', badge: registrations.length },
     { to: '/students', icon: Users, label: 'Students' },
     { to: '/payments', icon: CreditCard, label: 'Payments' },
   ];
@@ -24,8 +27,11 @@ const Sidebar = ({ isOpen, onClose }) => {
             className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
             onClick={onClose}
           >
-            <link.icon size={20} />
-            <span>{link.label}</span>
+            <div className="nav-item-content">
+              <link.icon size={20} />
+              <span>{link.label}</span>
+            </div>
+            {link.badge > 0 && <span className="nav-badge">{link.badge}</span>}
           </NavLink>
         ))}
       </nav>

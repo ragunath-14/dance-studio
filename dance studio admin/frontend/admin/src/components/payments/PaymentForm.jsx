@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import Button from '../ui/Button';
 import { Search, User } from 'lucide-react';
 
-const PaymentForm = ({ formData, setFormData, students, currentDebt, isEditing, onSubmit, onCancel }) => {
+const PaymentForm = ({ formData, setFormData, students, payments = [], currentDebt, isEditing, onSubmit, onCancel }) => {
   const initialStudentName = useMemo(() => {
     if (!formData.studentId) return '';
     const student = students.find(s => s._id === formData.studentId);
@@ -19,12 +19,20 @@ const PaymentForm = ({ formData, setFormData, students, currentDebt, isEditing, 
 
   const filteredStudents = useMemo(() => {
     if (!studentSearch.trim()) return [];
+<<<<<<< HEAD
     const term = studentSearch.toLowerCase();
     return students.filter(s =>
       (s.studentName || '').toLowerCase().includes(term) ||
       (s.email || '').toLowerCase().includes(term) ||
       (s.phone || '').toLowerCase().includes(term) ||
       (s.danceStyle || '').toLowerCase().includes(term)
+=======
+    return students.filter(s => 
+      (s.studentName || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+      (s.email || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+      (s.phone || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+      (s.danceStyle || '').toLowerCase().includes(studentSearch.toLowerCase())
+>>>>>>> f230228 (ragu)
     ).slice(0, 5); // Limit to 5 suggestions
   }, [students, studentSearch]);
 
@@ -33,6 +41,14 @@ const PaymentForm = ({ formData, setFormData, students, currentDebt, isEditing, 
     setStudentSearch(student.studentName);
     setShowSuggestions(false);
   };
+
+  const studentPayments = useMemo(() => {
+    if (!formData.studentId || !payments) return [];
+    return payments
+      .filter(p => (p.studentId?._id || p.studentId) === formData.studentId)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 5); // Show latest 5 transactions
+  }, [formData.studentId, payments]);
 
   return (
     <form onSubmit={onSubmit} onClick={() => setShowSuggestions(false)}>
@@ -89,6 +105,34 @@ const PaymentForm = ({ formData, setFormData, students, currentDebt, isEditing, 
               setFormData({...formData, studentId: ''});
               setStudentSearch('');
             }}>Change</button>
+          </div>
+        )}
+        
+        {formData.studentId && studentPayments.length > 0 && !showSuggestions && (
+          <div className="recent-history-container" style={{ marginTop: '12px', background: 'var(--surface)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Recent Payment History</h4>
+            <div className="history-table-wrap" style={{ maxHeight: 'none', margin: 0 }}>
+              <table className="history-table" style={{ fontSize: '0.85rem' }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '6px' }}>Date</th>
+                    <th style={{ padding: '6px' }}>Amount</th>
+                    <th style={{ padding: '6px' }}>Method</th>
+                    <th style={{ padding: '6px' }}>Purpose</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studentPayments.map((p, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: '6px' }}>{new Date(p.date).toLocaleDateString('en-GB')}</td>
+                      <td style={{ padding: '6px', color: '#4CAF50', fontWeight: 600 }}>₹{p.amount?.toLocaleString()}</td>
+                      <td style={{ padding: '6px' }}>{p.method || '—'}</td>
+                      <td style={{ padding: '6px' }}>{p.purpose || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
