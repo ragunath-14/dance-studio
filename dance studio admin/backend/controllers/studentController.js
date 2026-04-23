@@ -53,8 +53,12 @@ exports.createStudent = async (req, res) => {
 // Update a student
 exports.updateStudent = async (req, res) => {
   try {
-    const updatedStudent = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    
+    const updatedStudent = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+
+    if (!updatedStudent) {
+      return res.status(404).json({ message: 'Student not found.' });
+    }
+
     // Emit real-time update
     const io = req.app.get('socketio');
     if (io) io.emit('dataChanged', { type: 'student', action: 'update' });
@@ -68,13 +72,17 @@ exports.updateStudent = async (req, res) => {
 // Delete a student
 exports.deleteStudent = async (req, res) => {
   try {
-    await Student.findByIdAndDelete(req.params.id);
-    
+    const deleted = await Student.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Student not found.' });
+    }
+
     // Emit real-time update
     const io = req.app.get('socketio');
     if (io) io.emit('dataChanged', { type: 'student', action: 'delete' });
 
-    res.json({ message: 'Student deleted' });
+    res.json({ success: true, message: 'Student deleted successfully.' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

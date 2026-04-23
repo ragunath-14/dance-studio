@@ -12,10 +12,20 @@ exports.getAllPayments = async (req, res) => {
 
 // Create a payment
 exports.createPayment = async (req, res) => {
-  const payment = new Payment(req.body);
   try {
+    const { studentId, amount } = req.body;
+
+    // Validate required fields
+    if (!studentId) {
+      return res.status(400).json({ message: 'Student is required for payment.' });
+    }
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ message: 'A valid payment amount is required.' });
+    }
+
+    const payment = new Payment(req.body);
     const newPayment = await payment.save();
-    
+
     // Emit real-time update
     const io = req.app.get('socketio');
     if (io) io.emit('dataChanged', { type: 'payment', action: 'create' });

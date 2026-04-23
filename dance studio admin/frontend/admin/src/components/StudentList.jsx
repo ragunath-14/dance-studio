@@ -73,7 +73,7 @@ const StudentList = () => {
       if (wasEditing) {
         await axios.put(`${API_URL}/students/${wasEditing._id}`, formData);
       } else {
-        await axios.post(`${API_URL}/register`, formData);
+        await axios.post(`${API_URL}/students`, formData);
       }
       // Refresh data from backend after success
       await refreshData();

@@ -186,7 +186,8 @@ const PaymentList = () => {
     setShowModal(false);
     setIsEditing(false);
     setEditingId(null);
-    setFormData({ studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee', date: '' });
+    setCurrentDebt(0);
+    setFormData({ studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee', date: '', remainingFees: 0 });
   };
 
   return (

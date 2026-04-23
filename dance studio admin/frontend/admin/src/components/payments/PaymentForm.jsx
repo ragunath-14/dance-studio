@@ -19,11 +19,12 @@ const PaymentForm = ({ formData, setFormData, students, currentDebt, isEditing, 
 
   const filteredStudents = useMemo(() => {
     if (!studentSearch.trim()) return [];
-    return students.filter(s => 
-      s.studentName.toLowerCase().includes(studentSearch.toLowerCase()) ||
-      s.email.toLowerCase().includes(studentSearch.toLowerCase()) ||
-      s.phone.toLowerCase().includes(studentSearch.toLowerCase()) ||
-      s.danceStyle.toLowerCase().includes(studentSearch.toLowerCase())
+    const term = studentSearch.toLowerCase();
+    return students.filter(s =>
+      (s.studentName || '').toLowerCase().includes(term) ||
+      (s.email || '').toLowerCase().includes(term) ||
+      (s.phone || '').toLowerCase().includes(term) ||
+      (s.danceStyle || '').toLowerCase().includes(term)
     ).slice(0, 5); // Limit to 5 suggestions
   }, [students, studentSearch]);
 
