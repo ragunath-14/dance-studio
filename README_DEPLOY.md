@@ -1,6 +1,6 @@
 # Deployment Instructions for Dance Studio Management System
 
-This project is production-ready and security-hardened. Follow these steps to deploy.
+This project has been consolidated into a unified structure within the `dance studio` folder. It is production-ready and security-hardened.
 
 ---
 
@@ -11,49 +11,33 @@ This project is production-ready and security-hardened. Follow these steps to de
 │  Studio Frontend (Vite) │    │  Admin Frontend (Vite)   │
 │  Public Registration    │    │  Dashboard + Management  │
 │  Payment Portal         │    │  Students, Payments, Regs │
-│  Port: 5173 (dev)       │    │  Port: 5174 (dev)        │
+│  Path: /studio          │    │  Path: /admin           │
 └────────────┬────────────┘    └────────────┬─────────────┘
              │                              │
              ▼                              ▼
-┌─────────────────────────┐    ┌──────────────────────────┐
-│  Registration Backend   │    │  Admin Backend            │
-│  Port: 5000             │    │  Port: 5001               │
-│  POST /api/register     │    │  Students CRUD            │
-│  Socket.io real-time    │    │  Payments + Fee Alerts     │
-│                         │    │  Cron: 09:00 AM IST daily  │
-│                         │    │  Socket.io real-time       │
-└────────────┬────────────┘    └────────────┬─────────────┘
-             │                              │
-             └──────────┬───────────────────┘
-                        ▼
-              ┌───────────────────┐
-              │  MongoDB Atlas    │
-              │  (Shared DB)      │
-              └───────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                 Unified Backend Server                  │
+│                 (Node.js / Express)                     │
+│                 Path: /backend                          │
+│                                                         │
+│  - Public Registration API                              │
+│  - Admin Management API                                 │
+│  - Automated Fee Alerts (Cron)                          │
+│  - Socket.io Real-time Updates                          │
+└────────────────────────────┬────────────────────────────┘
+                             │
+                             ▼
+                   ┌───────────────────┐
+                   │  MongoDB Atlas    │
+                   │  (Cloud Database) │
+                   └───────────────────┘
 ```
 
 ---
 
-## 1. Backend — Registration Server (Node.js/Express)
+## 1. Unified Backend (Node.js/Express)
 
 Deploy the contents of `dance studio/backend/` to **Render, Railway, or Heroku**.
-
-### Environment Variables (Required)
-
-| Variable         | Description                                                     | Example                                         |
-| ---------------- | --------------------------------------------------------------- | ----------------------------------------------- |
-| `PORT`           | Server port (usually auto-set by host)                          | `5000`                                          |
-| `MONGODB_URI`    | MongoDB Atlas connection string                                 | `mongodb+srv://user:pass@cluster.mongodb.net/`  |
-| `NODE_ENV`       | Set to `production` for live deployment                         | `production`                                    |
-| `ALLOWED_ORIGINS`| Comma-separated frontend URLs for CORS                          | `https://yourstudio.com,https://youradmin.com`  |
-| `WHATSAPP_API_URL`| WhatsApp API provider endpoint (optional)                      | `https://api.provider.com/send`                 |
-| `WHATSAPP_API_KEY`| WhatsApp API key (optional)                                     | `your_api_key_here`                             |
-
----
-
-## 2. Backend — Admin Server (Node.js/Express)
-
-Deploy the contents of `dance studio admin/backend/` to **Render, Railway, or Heroku**.
 
 ### Environment Variables (Required)
 
@@ -63,14 +47,14 @@ Deploy the contents of `dance studio admin/backend/` to **Render, Railway, or He
 | `MONGODB_URI`    | MongoDB Atlas connection string                                 | `mongodb+srv://user:pass@cluster.mongodb.net/`  |
 | `NODE_ENV`       | Set to `production` for live deployment                         | `production`                                    |
 | `TZ`             | Timezone for cron scheduler                                     | `Asia/Kolkata`                                  |
-| `ALLOWED_ORIGINS`| Comma-separated frontend URLs for CORS                          | `https://yourstudio.com,https://youradmin.com`  |
-| `STUDIO_URL`     | Public studio URL (used in WhatsApp payment links)              | `https://yourstudio.com`                        |
-| `WHATSAPP_API_URL`| WhatsApp API provider endpoint (optional)                      | `https://api.provider.com/send`                 |
-| `WHATSAPP_API_KEY`| WhatsApp API key (optional)                                     | `your_api_key_here`                             |
+| `ALLOWED_ORIGINS`| Comma-separated frontend URLs for CORS                          | `https://studio.com,https://admin.com`          |
+| `STUDIO_URL`     | Public studio URL (for WhatsApp payment links)                  | `https://studio.com`                            |
+| `WHATSAPP_API_URL`| WhatsApp API endpoint                                           | `https://api.provider.com/send`                 |
+| `WHATSAPP_API_KEY`| WhatsApp API key                                                | `your_api_key_here`                             |
 
 ---
 
-## 3. Frontend — Studio Landing Page (React/Vite)
+## 2. Studio Landing Page (React/Vite)
 
 Deploy the contents of `dance studio/studio/` to **Vercel or Netlify**.
 
@@ -78,28 +62,28 @@ Deploy the contents of `dance studio/studio/` to **Vercel or Netlify**.
 
 | Variable            | Description                                     | Example                                      |
 | ------------------- | ----------------------------------------------- | -------------------------------------------- |
-| `VITE_API_URL`      | Registration backend URL + /api                 | `https://your-reg-backend.onrender.com/api`  |
-| `VITE_ADMIN_API_URL`| Admin backend URL + /api (for Payment Portal)   | `https://your-admin-backend.onrender.com/api`|
+| `VITE_API_URL`      | Backend URL + /api                              | `https://your-backend.onrender.com/api`      |
+| `VITE_ADMIN_API_URL`| Backend URL + /api (for PayPortal)              | `https://your-backend.onrender.com/api`      |
 
 ### Build Command
-```
+```bash
 npm run build
 ```
 
 ---
 
-## 4. Frontend — Admin Panel (React/Vite)
+## 3. Admin Panel (React/Vite)
 
-Deploy the contents of `dance studio admin/frontend/admin/` to **Vercel or Netlify**.
+Deploy the contents of `dance studio/admin/` to **Vercel or Netlify**.
 
 ### Environment Variables
 
 | Variable       | Description                          | Example                                       |
 | -------------- | ------------------------------------ | --------------------------------------------- |
-| `VITE_API_URL` | Admin backend URL + /api             | `https://your-admin-backend.onrender.com/api` |
+| `VITE_API_URL` | Backend URL + /api                   | `https://your-backend.onrender.com/api`       |
 
 ### Build Command
-```
+```bash
 npm run build
 ```
 
@@ -107,48 +91,27 @@ npm run build
 
 ## Pre-Deployment Checklist
 
-- [ ] Set `NODE_ENV=production` on both backends
-- [ ] Set `ALLOWED_ORIGINS` to your actual frontend domains (no wildcards!)
-- [ ] Set `STUDIO_URL` to your public studio URL (for WhatsApp payment links)
-- [ ] Set `TZ=Asia/Kolkata` on admin backend for correct cron scheduling
-- [ ] Configure MongoDB Atlas IP whitelist (`0.0.0.0/0` if unsure)
-- [ ] Ensure `VITE_API_URL` is set before building frontends
-- [ ] Ensure `VITE_ADMIN_API_URL` is set for the studio frontend (for PayPortal)
-- [ ] Run `npm test` in admin backend to verify all unit tests pass
-- [ ] Check `/health` endpoint on both backends after deployment
+- [ ] Set `NODE_ENV=production` on the backend.
+- [ ] Set `ALLOWED_ORIGINS` to your actual frontend domains.
+- [ ] Set `TZ=Asia/Kolkata` for correct scheduling.
+- [ ] Ensure `VITE_API_URL` is set before building frontends.
+- [ ] Run `npm test` in the backend folder to verify logic.
+- [ ] Check `/health` endpoint after deployment.
 
 ---
 
-## Health Checks
+## Health Check
 
-Both backends expose a `/health` endpoint:
-```
-GET https://your-backend.onrender.com/health
-→ { "status": "healthy", "db": "connected", "uptime": 1234.56 }
-```
-
-Use this for monitoring tools (UptimeRobot, Render health checks, etc.)
+The backend exposes a `/health` endpoint:
+`GET https://your-backend.onrender.com/health`
+`→ { "status": "healthy", "db": "connected", "uptime": 1234.56, "version": "1.1.0 (Unified)" }`
 
 ---
 
-## Security Features (Built-in)
+## Security & Reliability
 
-- ✅ Helmet.js security headers (CSP, HSTS, XSS protection, etc.)
-- ✅ CORS restricted to whitelisted origins only
-- ✅ Request body size limited to 1MB
-- ✅ Input validation on all models (trim, regex, min/max)
-- ✅ Graceful shutdown on SIGTERM/SIGINT
-- ✅ No credentials logged to console
-- ✅ Proper error handling — no stack traces leaked to clients
-
----
-
-## Running Tests
-
-```bash
-# Run the comprehensive test suite (pure logic + API integration)
-cd "dance studio admin/backend"
-npm test
-
-# Tests will automatically skip API tests if servers are not running
-```
+- ✅ Helmet.js protection enabled.
+- ✅ CORS restricted to whitelisted origins.
+- ✅ Automated 09:00 AM IST Fee Alerts.
+- ✅ Graceful shutdown handling.
+- ✅ Real-time data sync via Socket.io.

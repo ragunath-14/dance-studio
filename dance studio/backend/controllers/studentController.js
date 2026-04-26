@@ -1,0 +1,355 @@
+const Student  = require('../models/Student');
+const Payment  = require('../models/Payment');
+const whatsapp = require('../services/whatsappService');
+
+// ─── Fee helper ──────────────────────────────────────────────────────────────
+const getMonthlyFee = (classType) => classType === 'Fitness Class' ? 2500 : 3500;
+
+// ─── Format mongoose validation errors ───────────────────────────────────────
+const formatValidationErrors = (err) =>
+  Object.values(err.errors).map((e) => e.message);
+
+// ─── GET /api/students ───────────────────────────────────────────────────────
+// ─── GET /api/students (Paginated) ──────────────────────────────────────────
+exports.getAllStudents = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50; // Default limit
+    const skip = (page - 1) * limit;
+    const search = req.query.search || '';
+    const classType = req.query.classType || '';
+
+    let query = {};
+    if (search) {
+      query.$or = [
+        { studentName: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (classType) {
+      query.classType = classType;
+    }
+
+    const [students, total] = await Promise.all([
+      Student.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Student.countDocuments(query)
+    ]);
+
+    res.json({
+      data: students,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
+  } catch (err) {
+    console.error('getAllStudents error:', err);
+    res.status(500).json({ message: 'Failed to fetch students.' });
+  }
+};
+
+// ─── GET /api/students/dashboard/stats ───────────────────────────────────────
+// Aggregates all data for the dashboard metrics in one fast call
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    const [students, payments, registrations] = await Promise.all([
+      Student.find().lean(),
+      Payment.find().lean(),
+      require('../models/Registration').find({ status: 'pending' }).lean()
+    ]);
+
+    // Metrics calculation (Same logic as frontend, but done once on backend)
+    const activeStudents = students.filter(s => s.isActive !== false);
+    
+    const monthRevenue = payments
+      .filter(p => {
+        const d = new Date(p.date || p.createdAt);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      })
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    const lifetimeRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    const overdueCount = activeStudents.filter(student => {
+      const joinDate = new Date(student.createdAt);
+      let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
+      if (today.getDate() < joinDate.getDate()) totalCycles--;
+      if (totalCycles <= 0) return false;
+
+      const totalPaid = payments
+        .filter(p => p.studentId?.toString() === student._id.toString() && p.purpose === 'Monthly Fee')
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+      
+      const fee = getMonthlyFee(student.classType);
+      return (totalCycles * fee - totalPaid) > 0;
+    }).length;
+
+    res.json({
+      metrics: {
+        total: students.length,
+        totalPayments: payments.length,
+        revenue: monthRevenue,
+        lifetime: lifetimeRevenue,
+        overdue: overdueCount,
+        pending: registrations.length,
+        classTypes: {
+          regular: activeStudents.filter(s => s.classType === 'Regular Class').length,
+          summer: activeStudents.filter(s => s.classType === 'Summer Class').length,
+          fitness: activeStudents.filter(s => s.classType === 'Fitness Class').length,
+        }
+      },
+      // Also return recent activity (last 24h)
+      recentActivity: [
+        ...payments
+          .filter(p => new Date(p.date || p.createdAt) >= new Date(Date.now() - 24 * 60 * 60 * 1000))
+          .map(p => ({ type: 'payment', date: p.date || p.createdAt, amount: p.amount, purpose: p.purpose, studentId: p.studentId })),
+        ...registrations
+          .filter(r => new Date(r.createdAt) >= new Date(Date.now() - 24 * 60 * 60 * 1000))
+          .map(r => ({ type: 'reg', date: r.createdAt, studentName: r.studentName, classType: r.classType }))
+      ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10)
+    });
+  } catch (err) {
+    console.error('getDashboardStats error:', err);
+    res.status(500).json({ message: 'Failed to fetch dashboard stats.' });
+  }
+};
+
+// ─── GET /api/students/unpaid (Paginated) ───────────────────────────────────
+exports.getUnpaidStudents = async (req, res) => {
+  try {
+    const today = new Date();
+    const students = await Student.find({ isActive: { $ne: false } }).lean();
+    const payments = await Payment.find({ purpose: 'Monthly Fee' }).lean();
+
+    const paymentsByStudent = new Map();
+    payments.forEach(p => {
+      const sid = p.studentId?.toString();
+      if (sid) paymentsByStudent.set(sid, (paymentsByStudent.get(sid) || 0) + (p.amount || 0));
+    });
+
+    const unpaid = students.map(student => {
+      const joinDate = new Date(student.createdAt);
+      let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
+      if (today.getDate() < joinDate.getDate()) totalCycles--;
+      
+      const fee = getMonthlyFee(student.classType);
+      const totalPaid = paymentsByStudent.get(student._id.toString()) || 0;
+      const totalDue = Math.max(0, (totalCycles * fee) - totalPaid);
+      const pendingMonths = Math.ceil(totalDue / fee);
+
+      return { ...student, totalDue, pendingMonths };
+    }).filter(s => s.pendingMonths > 0)
+      .sort((a, b) => b.totalDue - a.totalDue);
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+    
+    res.json({
+      data: unpaid.slice(skip, skip + limit),
+      total: unpaid.length,
+      page,
+      limit,
+      totalPages: Math.ceil(unpaid.length / limit)
+    });
+  } catch (err) {
+    console.error('getUnpaidStudents error:', err);
+    res.status(500).json({ message: 'Failed to fetch unpaid students.' });
+  }
+};
+
+// ─── GET /api/students/:id/public-dues ───────────────────────────────────────
+// Returns the current due amount for a student (used for public checks/reminders)
+exports.getStudentDues = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ message: 'Student not found.' });
+
+    const today = new Date();
+    const joinDate = new Date(student.createdAt);
+    
+    let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
+    if (today.getDate() < joinDate.getDate()) totalCycles--;
+    
+    if (totalCycles <= 0) {
+      return res.json({ totalDue: 0, pendingMonths: 0, totalPaid: 0 });
+    }
+
+    const payments = await Payment.find({ 
+      studentId: student._id, 
+      purpose: 'Monthly Fee' 
+    }).lean();
+
+    const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const fee = getMonthlyFee(student.classType);
+    const totalDue = Math.max(0, (totalCycles * fee) - totalPaid);
+    const pendingMonths = Math.ceil(totalDue / fee);
+
+    res.json({
+      studentName: student.studentName,
+      totalDue,
+      pendingMonths,
+      totalPaid,
+      fee
+    });
+  } catch (err) {
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid student ID format.' });
+    }
+    console.error('getStudentDues error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// ─── POST /api/students ──────────────────────────────────────────────────────
+exports.createStudent = async (req, res) => {
+  try {
+    const data = { ...req.body };
+
+    // Field-name compatibility shims
+    if (!data.studentName && data.name)     data.studentName = data.name;
+    if (!data.createdAt   && data.joinDate) data.createdAt   = data.joinDate;
+
+    // Explicit required-field check (better error messages than Mongoose default)
+    if (!data.studentName?.trim())
+      return res.status(400).json({ message: 'Student name is required.' });
+    if (!data.phone?.trim())
+      return res.status(400).json({ message: 'Phone number is required.' });
+
+    // Duplicate guard: Only reject if BOTH phone and name match
+    const existing = await Student.findOne({ 
+      phone: data.phone.trim(), 
+      studentName: data.studentName.trim() 
+    });
+    if (existing)
+      return res.status(409).json({ message: 'A student with this exact name and phone number is already registered.' });
+
+    const student    = new Student(data);
+    const newStudent = await student.save();
+
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'student', action: 'create' });
+
+    res.status(201).json(newStudent);
+  } catch (err) {
+    console.error('createStudent error:', err);
+    if (err.name === 'ValidationError')
+      return res.status(400).json({ message: formatValidationErrors(err).join('. ') });
+    if (err.code === 11000)
+      return res.status(409).json({ message: 'A student with this information already exists.' });
+    res.status(500).json({ message: 'Server error. Could not add student.' });
+  }
+};
+
+// ─── PUT /api/students/:id ───────────────────────────────────────────────────
+exports.updateStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Duplicate guard: Only reject if BOTH phone and name match for a different ID
+    if (req.body.phone || req.body.studentName) {
+      const query = { _id: { $ne: id } };
+      
+      // If updating phone, check with current name (or new name if provided)
+      // If updating name, check with current phone (or new phone if provided)
+      const currentStudent = await Student.findById(id);
+      if (!currentStudent) return res.status(404).json({ message: 'Student not found.' });
+
+      query.phone = (req.body.phone || currentStudent.phone).trim();
+      query.studentName = (req.body.studentName || currentStudent.studentName).trim();
+
+      const dup = await Student.findOne(query);
+      if (dup)
+        return res.status(409).json({ message: 'Another student with this exact name and phone number already exists.' });
+    }
+
+    const updated = await Student.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    if (!updated) return res.status(404).json({ message: 'Student not found.' });
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'student', action: 'update' });
+
+    res.json(updated);
+  } catch (err) {
+    console.error('updateStudent error:', err);
+    if (err.name === 'CastError')
+      return res.status(400).json({ message: 'Invalid student ID format.' });
+    if (err.name === 'ValidationError')
+      return res.status(400).json({ message: formatValidationErrors(err).join('. ') });
+    res.status(500).json({ message: 'Server error. Could not update student.' });
+  }
+};
+
+// ─── PATCH /api/students/:id/toggle-status ───────────────────────────────────
+exports.toggleStatus = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ message: 'Student not found.' });
+
+    const wasInactive = !student.isActive;
+    student.isActive = !student.isActive;
+
+    // When reactivating (Inactive -> Active), reset joining date to today
+    if (student.isActive && wasInactive) {
+      student.createdAt = new Date();
+    }
+
+    await student.save();
+
+    // Send rejoin WhatsApp when student is marked inactive
+    if (!student.isActive) {
+      const num = student.whatsappNumber || student.phone;
+      if (num) {
+        whatsapp.sendRejoinMessage(num, student.studentName, student.classType)
+          .catch((e) => console.error('WhatsApp rejoin error:', e));
+      }
+    }
+
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'student', action: 'statusToggle' });
+
+    res.json({
+      message: `Student marked as ${student.isActive ? 'Active' : 'Inactive'}. ${student.isActive ? 'Join date reset to today.' : ''}`,
+      student
+    });
+  } catch (err) {
+    console.error('toggleStatus error:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ─── DELETE /api/students/:id ────────────────────────────────────────────────
+exports.deleteStudent = async (req, res) => {
+  try {
+    const studentId = req.params.id;
+    const student = await Student.findByIdAndDelete(studentId);
+    if (!student) return res.status(404).json({ message: 'Student not found.' });
+
+    // Cascade delete related payments
+    await Payment.deleteMany({ studentId: studentId });
+
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('dataChanged', { type: 'student', action: 'delete' });
+      io.emit('dataChanged', { type: 'payment', action: 'delete' }); // Notify that payments might have changed
+    }
+
+    res.json({ success: true, message: 'Student and related details deleted successfully.' });
+  } catch (err) {
+    console.error('deleteStudent error:', err);
+    if (err.name === 'CastError')
+      return res.status(400).json({ message: 'Invalid student ID format.' });
+    res.status(500).json({ message: err.message });
+  }
+};
+
