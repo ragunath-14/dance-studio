@@ -1,7 +1,7 @@
 /**
  * backend/index.js
  * ─────────────────────────────────────────────────────────────────────────────
- * Expressionz Dance Studio — Unified Backend Server
+ * KJ Dance Studio — Unified Backend Server
  *
  * Architecture:
  *   • Express REST API  → /api/*
@@ -113,6 +113,14 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ success: true, token });
 });
 
+app.get('/api/admin/verify', verifyAdminToken, (req, res) => {
+  res.json({ success: true, message: 'Token is valid' });
+});
+
+app.get('/api/auth/verify', verifyAdminToken, (req, res) => {
+  res.json({ success: true, message: 'Token is valid' });
+});
+
 // ── Protected API Routes ─────────────────────────────────────────────────────
 app.use('/api', apiLimiter);
 app.use('/api/students',     verifyAdminToken, studentRoutes);
@@ -188,7 +196,7 @@ const startKeepAlive = () => {
       }
       
       // 2. Keep Render Web Service awake (pings frontend URL & backend health)
-      const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL || 'https://www.expressionzdancestudio.in';
+      const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL || `http://localhost:${PORT}`;
       if (selfUrl) {
         const urlToPing = selfUrl.replace(/\/$/, '');
         const httpLib = urlToPing.startsWith('https') ? require('https') : require('http');

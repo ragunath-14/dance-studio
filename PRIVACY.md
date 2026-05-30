@@ -76,4 +76,4 @@ We reserve the right to make changes to this Privacy Policy at any time and for 
 If you have questions or comments about this Privacy Policy, please contact us at:
 
 * **Email:** ragu08974@gmail.com
-* **Website:** https://expressionzdancestudio.in
+* **Website:** https://KJdancestudio.in

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Search } from 'lucide-react';
 import API_URL from '../config';
@@ -10,13 +11,16 @@ import ConfirmDialog from './ui/ConfirmDialog';
 import Button from './ui/Button';
 import SkeletonRow from './ui/SkeletonRow';
 import Pagination from './ui/Pagination';
+import PaymentHistoryModal from './payments/PaymentHistoryModal';
 import './List.css';
 
 const StudentList = () => {
   const { students, stats: dashboardStats, studentsLoading, refreshData, fetchStudents, toggleStudentStatus } = useData();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Dance Class');
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [historyStudent, setHistoryStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [limit, setLimit] = useState(50);
   const [confirmState, setConfirmState] = useState({ open: false, studentId: null });
@@ -161,19 +165,16 @@ const StudentList = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Contact Details</th>
-              <th>Dance Style</th>
-              <th>{activeTab === 'Regular Class' ? 'Join Date' : 'Batch Info'}</th>
-              <th>Actions</th>
+              <th>Student</th>
+              <th style={{ textAlign: 'right', paddingRight: '48px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {studentsLoading && students.data.length === 0 ? (
               <>
-                <SkeletonRow columns={5} />
-                <SkeletonRow columns={5} />
-                <SkeletonRow columns={5} />
+                <SkeletonRow columns={2} />
+                <SkeletonRow columns={2} />
+                <SkeletonRow columns={2} />
               </>
             ) : processedStudents.length > 0 ? (
               processedStudents.map((student) => (
@@ -183,11 +184,12 @@ const StudentList = () => {
                   onEdit={openEditModal} 
                   onDelete={handleDelete} 
                   onToggleStatus={toggleStudentStatus}
+                  onViewHistory={setHistoryStudent}
                 />
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="text-center">
+                <td colSpan="2" className="text-center">
                   {studentsLoading ? 'Refreshing...' : `No students found in ${activeTab}`}
                 </td>
               </tr>
@@ -229,6 +231,16 @@ const StudentList = () => {
         onConfirm={confirmDelete}
         onCancel={() => setConfirmState({ open: false, studentId: null })}
       />
+
+      {historyStudent && (
+        <PaymentHistoryModal
+          student={historyStudent}
+          onClose={() => setHistoryStudent(null)}
+          onRecordPayment={(student) => {
+            navigate('/admin/payments', { state: { payStudentId: student._id } });
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -7,7 +7,7 @@ const Header = ({ isScrolled, isMenuOpen, setIsMenuOpen, onRegister }) => {
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container header-container">
         <div className="logo">
-          <h1 className="logo-text">Expressionz<span>.</span></h1>
+          <h1 className="logo-text">KJ<span>.</span></h1>
         </div>
         
         <nav className={`nav ${isMenuOpen ? 'nav-open' : ''}`}>

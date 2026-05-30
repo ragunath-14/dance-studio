@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Edit2, Trash2, CheckCircle, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Edit2, Trash2, CheckCircle, AlertCircle, ToggleLeft, ToggleRight, History } from 'lucide-react';
 import Button from '../ui/Button';
 
-const StudentRow = ({ student, onEdit, onDelete, onToggleStatus }) => {
+const StudentRow = ({ student, onEdit, onDelete, onToggleStatus, onViewHistory }) => {
   const [toggling, setToggling] = useState(false);
   const isActive = student.isActive !== false; // default true for existing students
 
@@ -38,7 +38,9 @@ const StudentRow = ({ student, onEdit, onDelete, onToggleStatus }) => {
     <tr className={!isActive ? 'inactive-row' : ''}>
       <td>
         <div className="student-name-cell">
-          {student.studentName || student.name}
+          <button className="student-name-link" onClick={() => onViewHistory(student)}>
+            {student.studentName || student.name}
+          </button>
           <div className="badge-row">
             {isActive ? (
               isPaid ? (
@@ -52,30 +54,8 @@ const StudentRow = ({ student, onEdit, onDelete, onToggleStatus }) => {
           </div>
         </div>
       </td>
-      <td>
-        <div className="contact-info">
-          {student.email && <span className="email">{student.email}</span>}
-          <span className="phone">P: {student.phone}</span>
-          {student.whatsappNumber && student.whatsappNumber !== student.phone && (
-            <span className="phone">W: {student.whatsappNumber}</span>
-          )}
-        </div>
-      </td>
-      <td>
-        <div className="dance-info">
-          {student.danceStyle && <span>{student.danceStyle}</span>}
-          {student.danceForFitness && (
-            <span className="fitness-tag">{student.danceForFitness}</span>
-          )}
-        </div>
-      </td>
-      <td>
-        <span className="join-date">
-          {new Date(student.createdAt || student.joinDate).toLocaleDateString('en-GB')}
-        </span>
-      </td>
-      <td>
-        <div className="action-buttons">
+      <td style={{ textAlign: 'right' }}>
+        <div className="action-buttons" style={{ justifyContent: 'flex-end', paddingRight: '24px' }}>
           <button 
             className={`status-toggle-btn ${isActive ? 'active' : 'inactive'}`}
             onClick={handleToggle}
@@ -90,6 +70,7 @@ const StudentRow = ({ student, onEdit, onDelete, onToggleStatus }) => {
               <><ToggleLeft size={16} /> Inactive</>
             )}
           </button>
+          <Button variant="icon" onClick={() => onViewHistory(student)} icon={History} title="View Payment History" />
           <Button variant="icon" onClick={() => {
             onEdit(student);
           }} icon={Edit2} />

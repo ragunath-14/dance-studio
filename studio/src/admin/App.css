@@ -1,12 +1,12 @@
 :root {
-  --primary-color: #FF8C00;
-  --primary-hover: #e67e00;
-  --bg-dark: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-sidebar: #ffffff;
-  --text-main: #1e293b;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --primary-color: #ED1C24;
+  --primary-hover: #d11920;
+  --bg-dark: #000000;
+  --bg-card: #111111;
+  --bg-sidebar: #000000;
+  --text-main: #ffffff;
+  --text-muted: #b0b0b0;
+  --border-color: #222222;
   --success: #10b981;
   --error: #ef4444;
   --warning: #f59e0b;
@@ -14,79 +14,96 @@
   --sidebar-width: 260px;
   --topbar-height: 70px;
   /* Surface tokens (blueprint spec) */
-  --surface-overlay: rgba(255, 255, 255, 0.9);
-  --surface-subtle: #f1f5f9;
+  --surface-overlay: rgba(17, 17, 17, 0.95);
+  --surface-subtle: rgba(255, 255, 255, 0.05);
 }
 
-/* ── Premium Dark Theme ─────────────────────────────────────────── */
-[data-theme="dark"] .admin-root {
-  --primary-color: #FF8C00;
-  --primary-hover: #ff9e2c;
-  --bg-dark: #0f1117;
-  --bg-card: #1a1d28;
-  --bg-sidebar: #141620;
-  --text-main: #e2e8f0;
-  --text-muted: #8b95a8;
-  --border-color: #2a2e3d;
-  --success: #34d399;
-  --error: #f87171;
-  --warning: #fbbf24;
-  --info: #60a5fa;
-  --surface-overlay: rgba(26, 29, 40, 0.95);
-  --surface-subtle: #1e2130;
+/* ── Light Theme Overrides ───────────────────────────────────────── */
+[data-theme="light"] .admin-root {
+  --primary-color: #ED1C24;
+  --primary-hover: #d11920;
+  --bg-dark: #f0f2f5;
+  --bg-card: #ffffff;
+  --bg-sidebar: #ffffff;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --surface-overlay: rgba(255, 255, 255, 0.95);
+  --surface-subtle: rgba(0, 0, 0, 0.05);
 }
 
-[data-theme="dark"] .admin-root {
+.admin-root {
   background-color: var(--bg-dark);
   color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-[data-theme="dark"] .admin-root input,
-[data-theme="dark"] .admin-root select,
-[data-theme="dark"] .admin-root textarea {
+.admin-root input,
+.admin-root select,
+.admin-root textarea {
   background-color: rgba(255, 255, 255, 0.04);
-  border-color: #334155;
-  color: #f1f5f9;
+  border-color: var(--border-color);
+  color: var(--text-main);
   transition: all 0.2s ease;
 }
 
-[data-theme="dark"] .admin-root input:focus,
-[data-theme="dark"] .admin-root select:focus,
-[data-theme="dark"] .admin-root textarea:focus {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.15);
+[data-theme="light"] .admin-root input,
+[data-theme="light"] .admin-root select,
+[data-theme="light"] .admin-root textarea {
+  background-color: #ffffff;
+  border-color: var(--border-color);
+  color: var(--text-main);
 }
 
-[data-theme="dark"] .admin-root .skeleton-pulse {
-  background: linear-gradient(-90deg, #1e2130 0%, #2a2e3d 50%, #1e2130 100%);
+.admin-root input:focus,
+.admin-root select:focus,
+.admin-root textarea:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15);
+}
+
+[data-theme="light"] .admin-root input:focus,
+[data-theme="light"] .admin-root select:focus,
+[data-theme="light"] .admin-root textarea:focus {
+  background-color: #ffffff;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15);
+}
+
+.admin-root .skeleton-pulse {
+  background: linear-gradient(-90deg, var(--bg-card) 0%, var(--border-color) 50%, var(--bg-card) 100%);
   background-size: 400% 400%;
 }
 
-[data-theme="dark"] .admin-root .method-badge {
+.admin-root .method-badge {
   background-color: var(--surface-subtle);
   color: var(--text-main);
 }
 
-[data-theme="dark"] .admin-root .suggestion-item:hover {
+.admin-root .suggestion-item:hover {
   background-color: var(--surface-subtle);
 }
 
-[data-theme="dark"] .admin-root .suggestion-item.selected {
-  background-color: rgba(255, 140, 0, 0.1);
+.admin-root .suggestion-item.selected {
+  background-color: rgba(237, 28, 36, 0.1);
 }
 
-[data-theme="dark"] .admin-root .selected-student-card {
+.admin-root .selected-student-card {
   background-color: var(--surface-subtle);
   border-color: var(--border-color);
 }
 
-[data-theme="dark"] .admin-root .selected-student-card .clear-selection {
+.admin-root .selected-student-card .clear-selection {
   border-color: var(--border-color);
   color: var(--text-muted);
 }
 
-[data-theme="dark"] .admin-root .selected-student-card .clear-selection:hover {
+.admin-root .selected-student-card .clear-selection:hover {
   background-color: rgba(239, 68, 68, 0.1);
 }
 

@@ -152,7 +152,7 @@ const RegisterModal = ({ showModal, setShowModal }) => {
           <button className="modal-close-reg" onClick={() => { setShowModal(false); setStep(1); setFieldErrors({}); }}><X size={24} /></button>
           <div className="registration-header-outside">
             <h2>Join Our Dance Class</h2>
-            <p>Start your dance journey with Expressionz Dance Academy.</p>
+            <p>Start your dance journey with KJ Dance Academy.</p>
 
             {/* Step Progress Indicator */}
             <div className="step-progress">
@@ -172,7 +172,7 @@ const RegisterModal = ({ showModal, setShowModal }) => {
 
           <div className="registration-main-box">
             <div className="reg-sidebar">
-              <h3>Why Join Expressionz?</h3>
+              <h3>Why Join KJ?</h3>
               <div className="reg-benefit">
                 <div className="reg-icon-box"><User size={20} /></div>
                 <div className="reg-benefit-text"><h4>Expert Instructors</h4><p>Learn from certified dance professionals</p></div>
@@ -187,7 +187,7 @@ const RegisterModal = ({ showModal, setShowModal }) => {
               </div>
               <div className="reg-contact-card">
                 <h5>Contact Information</h5>
-                <div className="reg-contact-item"><Mail size={14} className="reg-email-icon" /><span>expressionz_dance_studio@gmail.com</span></div>
+                <div className="reg-contact-item"><Mail size={14} className="reg-email-icon" /><span>KJ_dance_studio@gmail.com</span></div>
                 <div className="reg-contact-item"><Send size={14} className="reg-send-icon" /><span>We'll respond within 24 hours</span></div>
               </div>
             </div>
@@ -313,35 +313,6 @@ const RegisterModal = ({ showModal, setShowModal }) => {
                         {fieldErrors.classType && <span className="field-error">{fieldErrors.classType}</span>}
                       </div>
 
-                      {formData.classType === 'Dance Class' && (
-                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="form-group full-width">
-                          <label>Dance Style</label>
-                          <select name="danceStyle" value={formData.danceStyle} onChange={handleChange}>
-                            <option value="" disabled>Select dance style</option>
-                            <option value="Hip Hop">Hip Hop</option>
-                            <option value="Bollywood">Bollywood</option>
-                            <option value="Contemporary">Contemporary</option>
-                            <option value="Salsa">Salsa</option>
-                            <option value="Folk">Folk</option>
-                            <option value="Rock n Roll">Rock n Roll</option>
-                            <option value="Freestyle">Freestyle</option>
-                            <option value="Ballet">Ballet</option>
-                          </select>
-                        </motion.div>
-                      )}
-
-                      {formData.classType === 'Fitness Class' && (
-                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="form-group full-width">
-                          <label>Fitness Style</label>
-                          <select name="danceForFitness" value={formData.danceForFitness} onChange={handleChange}>
-                            <option value="" disabled>Select fitness style</option>
-                            <option value="Fitness">Fitness</option>
-                            <option value="Aerobics">Aerobics</option>
-                            <option value="Zumba">Zumba</option>
-                            <option value="Reebok fitness">Reebok fitness</option>
-                          </select>
-                        </motion.div>
-                      )}
 
                       <div className="form-group full-width">
                         <label>Additional Notes</label>

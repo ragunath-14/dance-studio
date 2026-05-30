@@ -113,12 +113,12 @@ const WelcomeModal = ({ showModal, setShowModal, onRegister }) => {
               </div>
 
               <a 
-                href="https://www.instagram.com/expressionz_dance_studio?igsh=MjdqY2k0dHB6a2M0&utm_source=qr" 
+                href="https://www.instagram.com/KJ_dance_studio?igsh=MjdqY2k0dHB6a2M0&utm_source=qr" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="insta-handle"
               >
-                <Instagram size={20} /> @EXPRESSIONZ_DANCE_STUDIO
+                <Instagram size={20} /> @KJ_DANCE_STUDIO
               </a>
             </div>
           </motion.div>

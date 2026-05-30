@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Search, Check, Bell, History, Send } from 'lucide-react';
 import API_URL from '../config';
@@ -23,7 +24,7 @@ const PaymentList = () => {
   const [showModal,             setShowModal]             = useState(false);
   const [searchTerm,            setSearchTerm]            = useState('');
   const [formData,              setFormData]              = useState({
-    studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee', date: '', remainingFees: 0
+    studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee', date: new Date().toISOString().split('T')[0], remainingFees: 0
   });
   const [currentDebt,           setCurrentDebt]           = useState(0);
   const [isEditing,             setIsEditing]             = useState(false);
@@ -49,13 +50,54 @@ const PaymentList = () => {
     else fetchUnpaidStudents(1, newLimit);
   };
 
-  const paginatedPayments = payments.data || [];
+  const paginatedPayments = React.useMemo(() => {
+    const rawPayments = payments.data || [];
+    const grouped = {};
+    rawPayments.forEach(p => {
+      const studentId = p.studentId?._id || p.studentId;
+      if (!studentId) return;
+      const sId = String(studentId);
+      if (!grouped[sId]) {
+        grouped[sId] = {
+          ...p,
+          totalAmount: p.amount,
+          latestRemaining: p.remainingFees
+        };
+      } else {
+        grouped[sId].totalAmount += p.amount;
+        // Keep the latest details based on date
+        if (new Date(p.date) > new Date(grouped[sId].date)) {
+          grouped[sId].date = p.date;
+          grouped[sId].latestRemaining = p.remainingFees;
+          grouped[sId].method = p.method;
+          grouped[sId].purpose = p.purpose;
+        }
+      }
+    });
+    return Object.values(grouped).map(g => ({
+      ...g,
+      amount: g.totalAmount,
+      remainingFees: g.latestRemaining
+    }));
+  }, [payments.data]);
   const paginatedUnpaid   = serverUnpaid.data || [];
 
   const totalPages  = activeTab === 'paid' ? (payments.totalPages || 1) : (serverUnpaid.totalPages || 1);
   const currentPage = activeTab === 'paid' ? (payments.page || 1) : (serverUnpaid.page || 1);
 
   const isInitialMount = React.useRef(true);
+  const location = useLocation();
+
+  React.useEffect(() => {
+    if (location.state?.payStudentId && allStudents.length > 0) {
+      const student = allStudents.find(s => s._id === location.state.payStudentId);
+      if (student) {
+        handlePay(student);
+        // Clear history state to avoid triggering on navigation/refresh
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, allStudents]);
 
   React.useEffect(() => {
     if (isInitialMount.current) {
@@ -139,7 +181,7 @@ const PaymentList = () => {
     setFormData({
       studentId: payment.studentId?._id || payment.studentId, amount: payment.amount,
       method: payment.method || 'Cash', purpose: payment.purpose || 'Monthly Fee',
-      date: payment.date ? payment.date.split('T')[0] : '', remainingFees: payment.remainingFees || 0
+      date: payment.date ? payment.date.split('T')[0] : new Date().toISOString().split('T')[0], remainingFees: payment.remainingFees || 0
     });
     setEditingId(payment._id);
     setEditingOriginalAmount(payment.amount || 0);
@@ -167,7 +209,7 @@ const PaymentList = () => {
     setEditingId(null);
     setEditingOriginalAmount(0);
     setCurrentDebt(0);
-    setFormData({ studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee', date: '', remainingFees: 0 });
+    setFormData({ studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee', date: new Date().toISOString().split('T')[0], remainingFees: 0 });
   };
 
   const isTableLoading = loading || paymentsLoading;

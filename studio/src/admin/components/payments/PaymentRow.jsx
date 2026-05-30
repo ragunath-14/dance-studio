@@ -1,11 +1,15 @@
-import { RotateCcw, Edit2 } from 'lucide-react';
+import { RotateCcw, Edit2, History } from 'lucide-react';
 import Button from '../ui/Button';
 
-const PaymentRow = ({ payment, onDelete, onEdit }) => {
+const PaymentRow = ({ payment, onDelete, onEdit, onViewHistory }) => {
   return (
     <tr>
       <td>{new Date(payment.date).toLocaleDateString('en-GB')}</td>
-      <td>{payment.studentId?.studentName || payment.studentId?.name || 'Unknown'}</td>
+      <td>
+        <button className="student-name-link" onClick={onViewHistory}>
+          {payment.studentId?.studentName || payment.studentId?.name || 'Unknown'}
+        </button>
+      </td>
       <td className="amount">
         ₹{payment.amount}
         {payment.remainingFees > 0 && (
@@ -20,6 +24,15 @@ const PaymentRow = ({ payment, onDelete, onEdit }) => {
       <td className="hide-mobile">{payment.purpose}</td>
       <td>
         <div className="action-buttons">
+          <Button 
+            variant="secondary" 
+            size="sm"
+            onClick={onViewHistory} 
+            icon={History} 
+            title="View History"
+          >
+            <span className="hide-mobile">History</span>
+          </Button>
           <Button 
             variant="secondary" 
             size="sm"

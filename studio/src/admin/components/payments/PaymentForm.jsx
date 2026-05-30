@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import Button from '../ui/Button';
 import { Search, User, CreditCard, TrendingDown, CheckCircle } from 'lucide-react';
 
-const PaymentForm = ({ formData, setFormData, students, payments = [], currentDebt, isEditing, editingPaymentAmount = 0, onSubmit, onCancel }) => {
+const PaymentForm = ({ formData, setFormData, students = [], payments = [], currentDebt, isEditing, editingPaymentAmount = 0, onSubmit, onCancel }) => {
   const initialStudentName = useMemo(() => {
     if (!formData.studentId) return '';
     const student = students.find(s => s._id === formData.studentId);
@@ -24,8 +24,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
       s.isActive !== false &&
       ((s.studentName || '').toLowerCase().includes(term) ||
       (s.email || '').toLowerCase().includes(term) ||
-      (s.phone || '').toLowerCase().includes(term) ||
-      (s.danceStyle || '').toLowerCase().includes(term))
+      (s.phone || '').toLowerCase().includes(term))
     ).slice(0, 5); // Limit to 5 suggestions
   }, [students, studentSearch]);
 
@@ -120,7 +119,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
                 <div className="suggestion-icon"><User size={14} /></div>
                 <div className="suggestion-details">
                   <span className="name">{s.studentName}</span>
-                  <span className="meta">{s.danceStyle} • {s.classType}</span>
+                  <span className="meta">{s.classType}</span>
                 </div>
               </div>
             ))}
@@ -136,8 +135,6 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
                 <span className="badge">{selectedStudent?.classType}</span>
               </div>
               <div className="meta-row">
-                <span>{selectedStudent?.danceStyle}</span>
-                <span>•</span>
                 <span>{selectedStudent?.email}</span>
               </div>
             </div>
@@ -374,9 +371,9 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
         /* Inputs & Selectors */
         .modern-payment-form input,
         .modern-payment-form select {
-          background: rgba(30, 41, 59, 0.45) !important;
+          background: rgba(255, 255, 255, 0.03) !important;
           border: 1px solid rgba(255, 255, 255, 0.08) !important;
-          color: #f8fafc !important;
+          color: #ffffff !important;
           padding: 12px 16px !important;
           border-radius: 12px !important;
           font-size: 0.9rem !important;
@@ -395,19 +392,19 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
         .modern-payment-form input:hover,
         .modern-payment-form select:hover {
           border-color: rgba(255, 255, 255, 0.15) !important;
-          background: rgba(30, 41, 59, 0.6) !important;
+          background: rgba(255, 255, 255, 0.05) !important;
         }
 
         .modern-payment-form input:focus,
         .modern-payment-form select:focus {
-          border-color: #ff8c00 !important;
-          background: rgba(30, 41, 59, 0.8) !important;
-          box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+          border-color: #ED1C24 !important;
+          background: rgba(255, 255, 255, 0.06) !important;
+          box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
         }
 
         .modern-payment-form select option {
-          background-color: #0f172a !important; /* Slate 900 drop option */
-          color: #f8fafc !important;
+          background-color: #111111 !important; /* Premium dark background */
+          color: #ffffff !important;
           padding: 12px !important;
         }
 
@@ -431,7 +428,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
         }
 
         .search-input-wrapper input:focus + .search-icon {
-          color: #ff8c00;
+          color: #ED1C24;
         }
 
         /* Search Suggestions Dropdown */
@@ -440,7 +437,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
           top: calc(100% + 6px);
           left: 0;
           right: 0;
-          background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.99) 100%) !important;
+          background: linear-gradient(135deg, rgba(17, 17, 17, 0.98) 0%, rgba(15, 23, 42, 0.99) 100%) !important;
           border: 1px solid rgba(255, 255, 255, 0.12) !important;
           border-radius: 12px !important;
           z-index: 1000;
@@ -468,7 +465,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
         }
 
         .suggestion-item.selected {
-          background: rgba(251, 146, 60, 0.1) !important;
+          background: rgba(237, 28, 36, 0.1) !important;
         }
 
         .suggestion-icon {
@@ -515,12 +512,12 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
           width: 44px;
           height: 44px;
           border-radius: 12px;
-          background: rgba(251, 146, 60, 0.1);
-          color: #ff8c00;
+          background: rgba(237, 28, 36, 0.1);
+          color: #ED1C24;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 12px rgba(251, 146, 60, 0.15);
+          box-shadow: 0 0 12px rgba(237, 28, 36, 0.15);
         }
 
         .selected-student-card .card-info {
@@ -543,13 +540,13 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
         }
 
         .selected-student-card .badge {
-          background: rgba(251, 146, 60, 0.12) !important;
-          color: #ff8c00 !important;
+          background: rgba(237, 28, 36, 0.12) !important;
+          color: #ED1C24 !important;
           font-size: 0.72rem !important;
           font-weight: 750 !important;
           padding: 3px 8px !important;
           border-radius: 6px !important;
-          border: 1px solid rgba(251, 146, 60, 0.2) !important;
+          border: 1px solid rgba(237, 28, 36, 0.2) !important;
         }
 
         .selected-student-card .meta-row {
@@ -580,7 +577,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
 
         /* Recent payment history styled container */
         .recent-history-container {
-          background: rgba(30, 41, 59, 0.25) !important;
+          background: rgba(255, 255, 255, 0.03) !important;
           border: 1px solid rgba(255, 255, 255, 0.06) !important;
           border-radius: 16px !important;
           padding: 16px !important;
@@ -594,6 +591,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
           margin: 0 0 12px 0 !important;
           text-transform: uppercase !important;
           letter-spacing: 0.05em !important;
+          text-align: left;
         }
 
         .recent-history-container .history-table-wrap {
@@ -636,7 +634,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
 
         /* Payment Summary Card */
         .payment-summary-card {
-          background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
+          background: rgba(255, 255, 255, 0.02) !important;
           border: 1px solid rgba(255, 255, 255, 0.08) !important;
           border-radius: 20px !important;
           padding: 20px !important;
@@ -683,7 +681,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
 
         .summary-progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, #ff8c00, #4ade80) !important;
+          background: linear-gradient(90deg, #ED1C24, #4ade80) !important;
           border-radius: 99px;
           transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -719,7 +717,7 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
         }
 
         .stat-val.paying-now {
-          color: #ff8c00 !important; /* Soft orange */
+          color: #ED1C24 !important; /* Soft Red KJ */
         }
 
         .stat-val.remaining.pending {
@@ -739,8 +737,8 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
         }
 
         .btn-primary-custom {
-          background: linear-gradient(135deg, #ff8c00 0%, #f97316 100%) !important;
-          color: #0f172a !important;
+          background: linear-gradient(135deg, #ED1C24 0%, #d11920 100%) !important;
+          color: #ffffff !important;
           padding: 12px 28px !important;
           border: none !important;
           border-radius: 12px !important;
@@ -748,12 +746,12 @@ const PaymentForm = ({ formData, setFormData, students, payments = [], currentDe
           font-size: 0.95rem !important;
           cursor: pointer !important;
           transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-          box-shadow: 0 4px 12px rgba(251, 146, 60, 0.25) !important;
+          box-shadow: 0 4px 12px rgba(237, 28, 36, 0.25) !important;
         }
 
         .btn-primary-custom:hover {
-          background: linear-gradient(135deg, #fbbf24 0%, #ff8c00 100%) !important;
-          box-shadow: 0 6px 20px rgba(251, 146, 60, 0.4) !important;
+          background: linear-gradient(135deg, #ff3b42 0%, #ED1C24 100%) !important;
+          box-shadow: 0 6px 20px rgba(237, 28, 36, 0.4) !important;
           transform: translateY(-1.5px);
         }
 

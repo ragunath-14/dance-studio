@@ -528,3 +528,30 @@
   animation: rotation 0.7s linear infinite;
 }
 
+/* ── Batch & Location Tags ───────────────────────────────────────────── */
+.admin-root .batch-tag {
+  background-color: rgba(237, 28, 36, 0.08) !important;
+  color: #ED1C24 !important;
+  padding: 4px 10px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  border: 1px solid rgba(237, 28, 36, 0.18) !important;
+  display: inline-block;
+  margin-right: 6px;
+  text-transform: capitalize;
+  letter-spacing: 0.2px;
+}
+
+.admin-root .location-tag {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  color: #cbd5e1 !important;
+  padding: 4px 10px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: inline-block;
+  text-transform: capitalize;
+}
+

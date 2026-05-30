@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { DataProvider } from './context/DataContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import StudentList from './components/StudentList';
@@ -36,30 +37,32 @@ const AdminModule = () => {
   };
 
   return (
-    <div className="admin-root">
-      <DataProvider isAuthenticated={isAuthenticated}>
-        <Routes>
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
-          
-          <Route path="/*" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <Layout onLogout={() => handleLogin(false)}>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/students" element={<StudentList />} />
-                  <Route path="/payments" element={<PaymentList />} />
-                  <Route path="/registrations" element={<RegistrationList />} />
-                  <Route path="/activity" element={<ActivityLog />} />
+    <ThemeProvider>
+      <div className="admin-root">
+        <DataProvider isAuthenticated={isAuthenticated}>
+          <Routes>
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            
+            <Route path="/*" element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <Layout onLogout={() => handleLogin(false)}>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="students" element={<StudentList />} />
+                    <Route path="payments" element={<PaymentList />} />
+                    <Route path="registrations" element={<RegistrationList />} />
+                    <Route path="activity" element={<ActivityLog />} />
 
-                  {/* Fallback to dashboard */}
-                  <Route path="*" element={<Navigate to="/admin" replace />} />
-                </Routes>
-              </Layout>
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </DataProvider>
-    </div>
+                    {/* Fallback to dashboard */}
+                    <Route path="*" element={<Navigate to="/admin" replace />} />
+                  </Routes>
+                </Layout>
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </DataProvider>
+      </div>
+    </ThemeProvider>
   );
 };
 

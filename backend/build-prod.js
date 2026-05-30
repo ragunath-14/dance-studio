@@ -30,7 +30,7 @@ function check(dir, name) {
   console.log(`✅ Found ${name}`);
 }
 
-console.log('\n🏗️  Expressionz Dance Studio — Production Build');
+console.log('\n🏗️  KJ Dance Studio — Production Build');
 console.log('='.repeat(50));
 
 // ── Validate dirs ─────────────────────────────────

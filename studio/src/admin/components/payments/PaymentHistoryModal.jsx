@@ -66,6 +66,31 @@ const PaymentHistoryModal = ({ student, onClose, onRecordPayment }) => {
           </button>
         </div>
 
+        <div className="history-metadata">
+          <div className="metadata-item">
+            <span>Phone:</span>
+            <strong>{student.phone}</strong>
+          </div>
+          <div className="metadata-item">
+            <span>Email:</span>
+            <strong>{student.email || '—'}</strong>
+          </div>
+          <div className="metadata-item">
+            <span>Batch:</span>
+            <strong>{student.batchTiming || '—'}</strong>
+          </div>
+          <div className="metadata-item">
+            <span>Location:</span>
+            <strong>{student.location || '—'}</strong>
+          </div>
+          {student.whatsappNumber && student.whatsappNumber !== student.phone && (
+            <div className="metadata-item full-width">
+              <span>WhatsApp:</span>
+              <strong>{student.whatsappNumber}</strong>
+            </div>
+          )}
+        </div>
+
         <div className="history-summary">
           <div className="hs-card green">
             <CreditCard size={18} />

@@ -301,18 +301,6 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
             )}
           </div>
 
-          {/* Conditional Styles Fields */}
-          {formData.classType === 'Dance Class' && (
-            <div className="conditional-dropdown-wrapper animate-fade-in">
-              {selectField('Dance Style', 'danceStyle', DANCE_STYLES, 'Select dance style')}
-            </div>
-          )}
-
-          {formData.classType === 'Fitness Class' && (
-            <div className="conditional-dropdown-wrapper animate-fade-in">
-              {selectField('Fitness Style', 'danceForFitness', FITNESS_STYLES, 'Select fitness style')}
-            </div>
-          )}
 
           {/* Legacy type warning */}
           {isEditing && !['Dance Class', 'Fitness Class', 'Regular Class'].includes(formData.classType) && (
@@ -447,10 +435,10 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         }
 
         .step-bubble.active {
-          border-color: #ff8c00 !important;
-          background: linear-gradient(135deg, #ff8c00 0%, #f97316 100%) !important;
-          color: #0f172a !important; /* Dark slate text */
-          box-shadow: 0 0 16px rgba(251, 146, 60, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+          border-color: #ED1C24 !important;
+          background: linear-gradient(135deg, #ED1C24 0%, #d11920 100%) !important;
+          color: #ffffff !important;
+          box-shadow: 0 0 16px rgba(237, 28, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
           transform: scale(1.05);
         }
 
@@ -470,7 +458,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
           top: 0;
           height: 100%;
           width: 100%;
-          background: linear-gradient(90deg, #ff8c00, #f97316) !important;
+          background: linear-gradient(90deg, #ED1C24, #d11920) !important;
           animation: fillLine 0.4s ease forwards;
         }
 
@@ -494,9 +482,9 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         }
 
         .step-labels-row .label-active {
-          color: #ff8c00 !important;
+          color: #ED1C24 !important;
           font-weight: 800;
-          text-shadow: 0 0 8px rgba(251, 146, 60, 0.2);
+          text-shadow: 0 0 8px rgba(237, 28, 36, 0.2);
         }
 
         .step-title-text {
@@ -563,10 +551,10 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         .sf-group input, 
         .sf-group select, 
         .sf-group textarea {
-          background: rgba(30, 41, 59, 0.45) !important;
-          background-color: rgba(30, 41, 59, 0.45) !important;
+          background: rgba(255, 255, 255, 0.03) !important;
+          background-color: rgba(255, 255, 255, 0.03) !important;
           border: 1px solid rgba(255, 255, 255, 0.08) !important;
-          color: #f8fafc !important; /* bright white-grey text */
+          color: #ffffff !important; /* bright white text */
           padding: 12px 16px !important;
           border-radius: 12px !important;
           font-size: 0.9rem !important;
@@ -592,8 +580,8 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         .sf-group select:hover, 
         .sf-group textarea:hover {
           border-color: rgba(255, 255, 255, 0.15) !important;
-          background: rgba(30, 41, 59, 0.6) !important;
-          background-color: rgba(30, 41, 59, 0.6) !important;
+          background: rgba(255, 255, 255, 0.05) !important;
+          background-color: rgba(255, 255, 255, 0.05) !important;
         }
 
         .modern-student-form .sf-group input:focus, 
@@ -602,10 +590,10 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         .sf-group input:focus, 
         .sf-group select:focus, 
         .sf-group textarea:focus {
-          border-color: #ff8c00 !important;
-          background: rgba(30, 41, 59, 0.8) !important;
-          background-color: rgba(30, 41, 59, 0.8) !important;
-          box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+          border-color: #ED1C24 !important;
+          background: rgba(255, 255, 255, 0.06) !important;
+          background-color: rgba(255, 255, 255, 0.06) !important;
+          box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
         }
 
         /* Premium Calendar Picker Invert Icon for dark mode background consistency */
@@ -617,8 +605,8 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         /* Native select dropdown styles override */
         .modern-student-form .sf-group select option,
         .sf-group select option {
-          background-color: #0f172a !important; /* slate-900 */
-          color: #f8fafc !important;
+          background-color: #111111 !important; /* Premium dark background */
+          color: #ffffff !important;
           padding: 12px !important;
         }
 
@@ -657,8 +645,8 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
           height: 20px !important;
           appearance: none !important;
           -webkit-appearance: none !important;
-          background: rgba(30, 41, 59, 0.6) !important;
-          background-color: rgba(30, 41, 59, 0.6) !important;
+          background: rgba(255, 255, 255, 0.03) !important;
+          background-color: rgba(255, 255, 255, 0.03) !important;
           border: 1px solid rgba(255, 255, 255, 0.15) !important;
           border-radius: 6px !important;
           outline: none !important;
@@ -674,9 +662,9 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
 
         .modern-student-form .whatsapp-checkbox-label input[type="checkbox"]:checked,
         .whatsapp-checkbox-label input[type="checkbox"]:checked {
-          background: linear-gradient(135deg, #ff8c00 0%, #f97316 100%) !important;
-          border-color: #ff8c00 !important;
-          box-shadow: 0 0 10px rgba(251, 146, 60, 0.3) !important;
+          background: linear-gradient(135deg, #ED1C24 0%, #d11920 100%) !important;
+          border-color: #ED1C24 !important;
+          box-shadow: 0 0 10px rgba(237, 28, 36, 0.3) !important;
         }
 
         .modern-student-form .whatsapp-checkbox-label input[type="checkbox"]::before,
@@ -684,7 +672,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
           content: "✓" !important;
           font-size: 13px !important;
           font-weight: 900 !important;
-          color: #0f172a !important;
+          color: #ffffff !important;
           display: none !important;
         }
 
@@ -712,7 +700,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
 
         .class-selection-card {
           border: 1px solid rgba(255, 255, 255, 0.08) !important;
-          background: rgba(30, 41, 59, 0.3) !important;
+          background: rgba(255, 255, 255, 0.02) !important;
           border-radius: 16px !important;
           padding: 16px 12px !important;
           display: flex !important;
@@ -725,16 +713,16 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         }
 
         .class-selection-card:hover {
-          border-color: rgba(251, 146, 60, 0.4) !important;
-          background: rgba(30, 41, 59, 0.6) !important;
+          border-color: rgba(237, 28, 36, 0.4) !important;
+          background: rgba(255, 255, 255, 0.05) !important;
           transform: translateY(-2px);
           box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
         }
 
         .class-selection-card.selected {
-          border-color: #ff8c00 !important;
-          background: rgba(251, 146, 60, 0.12) !important;
-          box-shadow: 0 0 16px rgba(251, 146, 60, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+          border-color: #ED1C24 !important;
+          background: rgba(237, 28, 36, 0.12) !important;
+          box-shadow: 0 0 16px rgba(237, 28, 36, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
           transform: scale(1.02);
         }
 
@@ -757,7 +745,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         }
 
         .class-selection-card.selected .card-text-label {
-          color: #ff8c00 !important;
+          color: #ED1C24 !important;
         }
 
         /* Action Buttons */
@@ -776,8 +764,8 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         }
 
         .btn-primary-custom {
-          background: linear-gradient(135deg, #ff8c00 0%, #f97316 100%) !important;
-          color: #0f172a !important; /* dark text */
+          background: linear-gradient(135deg, #ED1C24 0%, #d11920 100%) !important;
+          color: #ffffff !important;
           padding: 12px 24px !important;
           border: none !important;
           border-radius: 12px !important;
@@ -788,12 +776,12 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
           gap: 8px !important;
           cursor: pointer !important;
           transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-          box-shadow: 0 4px 12px rgba(251, 146, 60, 0.25) !important;
+          box-shadow: 0 4px 12px rgba(237, 28, 36, 0.25) !important;
         }
 
         .btn-primary-custom:hover {
-          background: linear-gradient(135deg, #fbbf24 0%, #ff8c00 100%) !important;
-          box-shadow: 0 6px 20px rgba(251, 146, 60, 0.4) !important;
+          background: linear-gradient(135deg, #ff3b42 0%, #ED1C24 100%) !important;
+          box-shadow: 0 6px 20px rgba(237, 28, 36, 0.4) !important;
           transform: translateY(-1.5px);
         }
 
@@ -820,8 +808,8 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         }
 
         .btn-join-custom {
-          background: linear-gradient(135deg, #ff8c00 0%, #f97316 100%) !important;
-          color: #0f172a !important; /* dark text */
+          background: linear-gradient(135deg, #ED1C24 0%, #d11920 100%) !important;
+          color: #ffffff !important;
           padding: 12px 28px !important;
           border: none !important;
           border-radius: 12px !important;
@@ -832,12 +820,12 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
           gap: 8px !important;
           cursor: pointer !important;
           transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-          box-shadow: 0 4px 12px rgba(251, 146, 60, 0.25) !important;
+          box-shadow: 0 4px 12px rgba(237, 28, 36, 0.25) !important;
         }
 
         .btn-join-custom:hover {
-          background: linear-gradient(135deg, #fbbf24 0%, #ff8c00 100%) !important;
-          box-shadow: 0 6px 20px rgba(251, 146, 60, 0.4) !important;
+          background: linear-gradient(135deg, #ff3b42 0%, #ED1C24 100%) !important;
+          box-shadow: 0 6px 20px rgba(237, 28, 36, 0.4) !important;
           transform: translateY(-1.5px);
         }
 

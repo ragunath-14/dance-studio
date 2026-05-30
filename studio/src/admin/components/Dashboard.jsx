@@ -92,7 +92,7 @@ const Dashboard = () => {
       <header className="dashboard-header">
         <div className="welcome">
           <h1>Welcome back, Admin</h1>
-          <p>Here's what's happening today at Expressionz Dance Academy.</p>
+          <p>Here's what's happening today at KJ Dance Academy.</p>
         </div>
         <div className="date-display">
           <Calendar size={18} />
