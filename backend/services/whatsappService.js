@@ -130,7 +130,7 @@ exports.sendWelcomeMessage = async (whatsappNumber, studentName, classType, batc
     `You are enrolled in ${cls} class. Batch timing: ${timing}. We are excited to have you! 💃`;
 
   return sendMessage(whatsappNumber, fallback, {
-    templateName: 'welcome_student',
+    templateName: 'welcome_message',
     languageCode: 'en',
     components  : [{
       type      : 'body',
@@ -158,7 +158,7 @@ exports.sendPendingFeesAlert = async (studentId, whatsappNumber, studentName, pe
     `for ${months} month(s) at Expressionz Dance Studio. Please clear it soon. 🙏`;
 
   return sendMessage(whatsappNumber, fallback, {
-    templateName: 'fee_reminder',
+    templateName: 'fee_remainder',
     languageCode: 'en',
     components  : [{
       type      : 'body',
@@ -185,7 +185,7 @@ exports.sendPaymentConfirmation = async (whatsappNumber, studentName, amount, pu
     `at Expressionz Dance Studio. Thank you! 🎉`;
 
   return sendMessage(whatsappNumber, fallback, {
-    templateName: 'payment_receipt',
+    templateName: 'payment_received',
     languageCode: 'en',
     components  : [{
       type      : 'body',
@@ -217,7 +217,7 @@ exports.sendRegistrationConfirmation = async (whatsappNumber, studentName, class
     `We will contact you soon! 🎉`;
 
   return sendMessage(whatsappNumber, fallback, {
-    templateName: 'registration_received',
+    templateName: 'welcome_message',
     languageCode: 'en',
     components  : [{
       type      : 'body',

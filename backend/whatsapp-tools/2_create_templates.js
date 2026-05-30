@@ -34,28 +34,28 @@ if (!token || !wabaId) {
 }
 
 // ─── Template Definitions ─────────────────────────────────────────────────────
-// Update these if the template content ever needs to change.
+// Template names must match EXACTLY what is registered in Meta Business Manager.
 // After changing, delete the old template via Meta dashboard, then run this script.
 const TEMPLATES = [
   {
-    name    : 'welcome_student',
+    name    : 'welcome_message',
     category: 'MARKETING',
     language: 'en',
-    body    : 'Hi {{1}}, welcome to Expressionz Dance Studio! You are enrolled in {{2}} class. Batch timing: {{3}}. We are excited to have you!',
+    body    : 'Hi {{1}}, welcome to Expressionz Dance Studio! You are enrolled in {{2}} class. Batch timing: {{3}}. We are excited to have you! 💃',
     example : ['Ragu', 'Dance', '5:00 PM']
   },
   {
-    name    : 'fee_reminder',
+    name    : 'fee_remainder',
     category: 'UTILITY',
     language: 'en',
-    body    : 'Hi {{1}}, this is a reminder that your fee of Rs.{{2}} is pending for {{3}} month(s) at Expressionz Dance Studio. Please clear it soon.',
+    body    : 'Hi {{1}}, this is a reminder that your fee of Rs.{{2}} is pending for {{3}} month(s) at Expressionz Dance Studio. Please clear it soon. 🙏',
     example : ['Ragu', '3500', '1']
   },
   {
-    name    : 'payment_receipt',
+    name    : 'payment_received',
     category: 'UTILITY',
     language: 'en',
-    body    : 'Hi {{1}}, we received your payment of Rs.{{2}} for {{3}} on {{4}} at Expressionz Dance Studio. Thank you!',
+    body    : 'Hi {{1}}, we received your payment of Rs.{{2}} for {{3}} on {{4}} at Expressionz Dance Studio. Thank you! 🎉',
     example : ['Ragu', '3500', 'Monthly Fee', '21 May 2026']
   }
 ];
