@@ -14,10 +14,12 @@ const formatValidationErrors = (err) =>
 exports.getAllStudents = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50; // Default limit
+    const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
     const classType = req.query.classType || '';
+    const ageGroup = req.query.ageGroup || '';   // 'kids' | 'adults'
+    const dayType  = req.query.dayType  || '';   // 'Weekdays' | 'Weekend'
 
     let query = {};
     if (search) {
@@ -28,6 +30,15 @@ exports.getAllStudents = async (req, res) => {
     }
     if (classType) {
       query.classType = classType;
+    }
+    if (dayType) {
+      query.dayType = dayType;
+    }
+    if (ageGroup === 'kids') {
+      // Kids: age <= 9 (stored as string, so we collect all numeric ages ≤ 9)
+      query.$expr = { $lte: [{ $toInt: '$studentAge' }, 9] };
+    } else if (ageGroup === 'adults') {
+      query.$expr = { $gt: [{ $toInt: '$studentAge' }, 9] };
     }
 
     const [students, total] = await Promise.all([

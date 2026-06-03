@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Filter, X } from 'lucide-react';
 import API_URL from '../config';
 import { useData } from '../context/DataContext';
 import StudentRow from './students/StudentRow';
@@ -23,6 +23,8 @@ const StudentList = () => {
   const [historyStudent, setHistoryStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [limit, setLimit] = useState(50);
+  const [ageGroup, setAgeGroup] = useState('');   // '' | 'kids' | 'adults'
+  const [dayType, setDayType]   = useState('');   // '' | 'Weekdays' | 'Weekend'
   const [confirmState, setConfirmState] = useState({ open: false, studentId: null });
 
   // Server-side fetching when page, tab, or search changes (skipping initial mount duplicate)
@@ -33,19 +35,19 @@ const StudentList = () => {
       return;
     }
     const timer = setTimeout(() => {
-      fetchStudents(1, limit, searchTerm, activeTab);
+      fetchStudents(1, limit, searchTerm, activeTab, ageGroup, dayType);
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, activeTab, limit]);
+  }, [searchTerm, activeTab, limit, ageGroup, dayType]);
 
   const onPageChange = (page) => {
-    fetchStudents(page, limit, searchTerm, activeTab);
+    fetchStudents(page, limit, searchTerm, activeTab, ageGroup, dayType);
   };
 
   const onLimitChange = (newLimit) => {
     setLimit(newLimit);
-    fetchStudents(1, newLimit, searchTerm, activeTab);
+    fetchStudents(1, newLimit, searchTerm, activeTab, ageGroup, dayType);
   };
 
   const [formData, setFormData] = useState({
@@ -150,6 +152,42 @@ const StudentList = () => {
             >
               Fitness ({metrics.fitness || 0})
             </button>
+          </div>
+
+          {/* ── Filter Dropdowns ─────────────────────────────── */}
+          <div className="filter-group">
+            <Filter size={15} style={{ color: 'var(--text-muted)' }} />
+            <select
+              className="filter-select"
+              value={ageGroup}
+              onChange={(e) => setAgeGroup(e.target.value)}
+              title="Filter by age group"
+            >
+              <option value="">All Ages</option>
+              <option value="kids">👶 Kids (≤ 9)</option>
+              <option value="adults">🧑 Adults (&gt; 9)</option>
+            </select>
+            <select
+              className="filter-select"
+              value={dayType}
+              onChange={(e) => setDayType(e.target.value)}
+              title="Filter by class days"
+            >
+              <option value="">All Days</option>
+              <option value="Weekdays">📅 Weekdays</option>
+              <option value="Weekend">🗓️ Weekend</option>
+            </select>
+
+            {/* Active filter chips */}
+            {(ageGroup || dayType) && (
+              <button
+                className="filter-clear-btn"
+                onClick={() => { setAgeGroup(''); setDayType(''); }}
+                title="Clear all filters"
+              >
+                <X size={13} /> Clear
+              </button>
+            )}
           </div>
         </div>
         <Button onClick={() => { 

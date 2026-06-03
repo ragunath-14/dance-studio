@@ -43,6 +43,7 @@ const StudentSchema = new mongoose.Schema({
     default: 'Dance Class'
   },
   studentAge: { type: String, trim: true },
+  fee: { type: Number, default: 0 },
   gender: { type: String, enum: { values: ['Male', 'Female', 'Other', ''], message: '{VALUE} is not a valid gender' }, trim: true },
   bloodGroup: { type: String, trim: true },
   parentName: { type: String, trim: true },
@@ -51,6 +52,11 @@ const StudentSchema = new mongoose.Schema({
   location: { type: String, trim: true },
   address: { type: String, trim: true },
   batchTiming: { type: String, trim: true },
+  dayType: {
+    type: String,
+    enum: { values: ['Weekdays', 'Weekend', ''], message: '{VALUE} is not a valid day type' },
+    trim: true
+  },
   notes: { type: String, trim: true },
   isActive: { type: Boolean, default: true, index: true },
   lastAlertSent: { type: Date },

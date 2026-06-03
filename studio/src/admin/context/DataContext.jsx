@@ -47,7 +47,7 @@ export const DataProvider = ({ children, isAuthenticated }) => {
   const [studentsLoading, setStudentsLoading]  = useState(false);
   const [paymentsLoading, setPaymentsLoading]  = useState(false);
 
-  const studentParamsRef = useRef({ page: 1, limit: 50, search: '', classType: '' });
+  const studentParamsRef = useRef({ page: 1, limit: 50, search: '', classType: '', ageGroup: '', dayType: '' });
   const paymentParamsRef = useRef({ page: 1, limit: 50 });
   const unpaidParamsRef  = useRef({ page: 1, limit: 50 });
 
@@ -76,11 +76,11 @@ export const DataProvider = ({ children, isAuthenticated }) => {
     }
   }, []);
 
-  const fetchStudents = useCallback(async (page = 1, limit = 50, search = '', classType = '') => {
+  const fetchStudents = useCallback(async (page = 1, limit = 50, search = '', classType = '', ageGroup = '', dayType = '') => {
     setStudentsLoading(true);
     try {
-      studentParamsRef.current = { page, limit, search, classType };
-      const res = await axios.get(`${API_URL}/students`, { params: { page, limit, search, classType } });
+      studentParamsRef.current = { page, limit, search, classType, ageGroup, dayType };
+      const res = await axios.get(`${API_URL}/students`, { params: { page, limit, search, classType, ageGroup, dayType } });
       setStudents(res.data);
     } catch (err) {
       console.error('Students fetch failed:', err);
@@ -131,7 +131,7 @@ export const DataProvider = ({ children, isAuthenticated }) => {
       await Promise.all([
         fetchStats(),
         fetchAllStudents(),
-        fetchStudents(sp.page, sp.limit, sp.search, sp.classType),
+        fetchStudents(sp.page, sp.limit, sp.search, sp.classType, sp.ageGroup, sp.dayType),
         fetchPayments(pp.page, pp.limit),
         fetchUnpaidStudents(up.page, up.limit),
         fetchRegistrations(),

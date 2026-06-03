@@ -19,6 +19,17 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
     isEditing ? (!formData.whatsappNumber || formData.whatsappNumber === formData.phone) : true
   );
 
+  // Auto-calculate fee based on age for new entries
+  React.useEffect(() => {
+    if (!isEditing && formData.studentAge) {
+      const ageNum = parseInt(formData.studentAge, 10);
+      const calculatedFee = ageNum <= 9 ? 1500 : 2500;
+      if (formData.fee !== calculatedFee) {
+        update('fee', calculatedFee);
+      }
+    }
+  }, [formData.studentAge, isEditing]);
+
   const update = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (stepErrors[field]) setStepErrors(prev => ({ ...prev, [field]: '' }));
@@ -212,6 +223,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
             {field('Student Name', 'studentName', 'text', "Enter student's full name", true)}
             <div className="form-grid-nested-2">
               {field('Age', 'studentAge', 'text', 'Age')}
+              {field('Fee', 'fee', 'number', 'Fee amount')}
               {selectField('Gender', 'gender', [
                 { value: 'Male', label: 'Male' },
                 { value: 'Female', label: 'Female' },

@@ -26,14 +26,17 @@ const Login = ({ onLogin }) => {
     <div className="login-container">
       <div className="login-card">
         <h2>Admin Login</h2>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="on">
           <div className="form-group">
-            <label>Password</label>
+            <label htmlFor="admin-password">Password</label>
             <input 
+              id="admin-password"
+              name="password"
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter admin password"
+              autoComplete="current-password"
               required
             />
           </div>
