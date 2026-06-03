@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import Button from '../ui/Button';
 import { Search, User, CreditCard, TrendingDown, CheckCircle } from 'lucide-react';
+import { calculateDues } from '../../utils/feeUtils';
 
 const PaymentForm = ({ formData, setFormData, students = [], payments = [], currentDebt, isEditing, editingPaymentAmount = 0, onSubmit, onCancel }) => {
   const initialStudentName = useMemo(() => {
@@ -49,17 +50,7 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
 
   const duesInfo = useMemo(() => {
     if (!selectedStudent) return null;
-    const today = new Date();
-    const getMonthlyFee = (ct) => ct === 'Fitness Class' ? 2500 : 3500;
-    const joinDate = new Date(selectedStudent.createdAt || selectedStudent.joinDate || today);
-    let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
-    if (today.getDate() < joinDate.getDate()) totalCycles--;
-    if (totalCycles <= 0) totalCycles = 0;
 
-    const fee = getMonthlyFee(selectedStudent.classType);
-
-    // Prefer server-side totalPaid (already aggregated from full payment history)
-    // Fall back to filtering the paginated payments prop (less accurate but better than nothing)
     let totalPaid = selectedStudent.totalPaid ?? null;
     if (totalPaid === null) {
       const studentFeePayments = payments.filter(p => {
@@ -69,14 +60,18 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
       totalPaid = studentFeePayments.reduce((s, p) => s + (p.amount || 0), 0);
     }
 
-    // When editing, add back the original payment amount to get accurate balance
     if (isEditing && editingPaymentAmount > 0) {
       totalPaid -= editingPaymentAmount;
     }
 
-    const totalExpected = totalCycles * fee;
-    const totalDue = Math.max(0, totalExpected - totalPaid);
-    return { totalPaid, totalExpected, totalDue, fee, totalCycles };
+    const dues = calculateDues(selectedStudent, totalPaid);
+    return {
+      totalPaid,
+      totalExpected: dues.totalExpected,
+      totalDue: dues.totalDue,
+      fee: dues.fee,
+      totalCycles: dues.totalCycles,
+    };
   }, [selectedStudent, payments, isEditing, editingPaymentAmount]);
 
   // ── Progress bar calculation ──

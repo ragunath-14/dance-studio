@@ -17,7 +17,7 @@ import './List.css';
 const StudentList = () => {
   const { students, stats: dashboardStats, studentsLoading, refreshData, fetchStudents, toggleStudentStatus } = useData();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Dance Class');
+  const [activeTab, setActiveTab] = useState(''); // '' means all class types
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [historyStudent, setHistoryStudent] = useState(null);
@@ -32,7 +32,6 @@ const StudentList = () => {
   React.useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
-      return;
     }
     const timer = setTimeout(() => {
       fetchStudents(1, limit, searchTerm, activeTab, ageGroup, dayType);
@@ -56,6 +55,7 @@ const StudentList = () => {
     studentAge: '', gender: '', bloodGroup: '', parentName: '', 
     emergencyContactName: '', emergencyContactPhone: '', 
     location: '', address: '', batchTiming: '', notes: '',
+    fee: 0,
     classType: 'Dance Class', 
     createdAt: new Date().toISOString().split('T')[0]
   });
@@ -140,6 +140,12 @@ const StudentList = () => {
             />
           </div>
           <div className="tabs">
+            <button 
+              className={`tab-btn ${!activeTab ? 'active' : ''}`}
+              onClick={() => setActiveTab('')}
+            >
+              All
+            </button>
             <button 
               className={`tab-btn ${activeTab === 'Dance Class' ? 'active' : ''}`}
               onClick={() => setActiveTab('Dance Class')}

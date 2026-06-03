@@ -2,8 +2,7 @@ const cron      = require('node-cron');
 const Student   = require('./models/Student');
 const Payment   = require('./models/Payment');
 const whatsapp  = require('./services/whatsappService');
-
-const getMonthlyFee = (classType) => classType === 'Fitness Class' ? 2500 : 3500;
+const { calculateDues } = require('./utils/feeUtils');
 
 /**
  * Core logic: find students with outstanding dues and fire WhatsApp reminders.
@@ -50,17 +49,11 @@ async function runPendingFeeAlerts() {
       const isAnniversary = todayDay === joinDay;
       const whatsappNum   = student.whatsappNumber || student.phone;
 
-      // ── Calculate dues ────────────────────────────────────────────────────
-      let totalCycles =
-        (today.getFullYear() - joinDate.getFullYear()) * 12 +
-        (today.getMonth()    - joinDate.getMonth()) + 1;
+      const totalPaid = paymentsByStudent.get(student._id.toString()) || 0;
+      const dues = calculateDues(student, totalPaid, today);
+      if (dues.totalCycles <= 0) continue;
 
-      if (today.getDate() < joinDay) totalCycles--;
-      if (totalCycles <= 0) continue; // Joined this month or future date — no dues yet
-
-      const fee           = getMonthlyFee(student.classType);
-      const totalPaid     = paymentsByStudent.get(student._id.toString()) || 0;
-      const totalDue      = Math.max(0, (totalCycles * fee) - totalPaid);
+      const { totalDue, pendingMonths, fee } = dues;
 
       if (totalDue <= 0) {
         // Student is fully paid — clear any stale lastAlertSent flag
@@ -70,8 +63,6 @@ async function runPendingFeeAlerts() {
         alertsSkipped++;
         continue;
       }
-
-      const pendingMonths = Math.ceil(totalDue / fee);
 
       // ── Decision Logic ─────────────────────────────────────────────────────
       const lastAlert = student.lastAlertSent ? new Date(student.lastAlertSent) : null;

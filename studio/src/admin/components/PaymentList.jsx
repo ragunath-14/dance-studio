@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Search, Check, Bell, History, Send } from 'lucide-react';
 import API_URL from '../config';
+import { getMonthlyFee } from '../utils/feeUtils';
 import { useData } from '../context/DataContext';
 import PaymentRow from './payments/PaymentRow';
 import PaymentForm from './payments/PaymentForm';
@@ -166,7 +167,7 @@ const PaymentList = () => {
     try {
       await axios.post(`${API_URL}/payments`, {
         studentId: student._id,
-        amount:    student.totalDue || (student.classType === 'Fitness Class' ? 2500 : 3500),
+        amount:    student.totalDue || getMonthlyFee(student),
         method: 'Cash', purpose: 'Monthly Fee', remainingFees: 0,
         date: new Date().toISOString()
       });

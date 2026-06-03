@@ -1,9 +1,7 @@
 const Student  = require('../models/Student');
 const Payment  = require('../models/Payment');
 const whatsapp = require('../services/whatsappService');
-
-// ─── Fee helper ──────────────────────────────────────────────────────────────
-const getMonthlyFee = (classType) => classType === 'Fitness Class' ? 2500 : 3500;
+const { getMonthlyFee, calculateDues } = require('../utils/feeUtils');
 
 // ─── Format mongoose validation errors ───────────────────────────────────────
 const formatValidationErrors = (err) =>
@@ -96,7 +94,7 @@ exports.getDashboardStats = async (req, res) => {
 
     // Parallel fetch — aggregate monthly-fee totals per student in one DB call
     const [students, monthlyFeePaidMap, monthRevenue, lifetimeRevenue, pendingRegistrations, recentRegistrations] = await Promise.all([
-      Student.find().select('studentName phone whatsappNumber classType isActive createdAt lastAlertSent').lean(),
+      Student.find().select('studentName phone whatsappNumber classType studentAge fee isActive createdAt lastAlertSent').lean(),
       // O(M) aggregation: total Monthly Fee paid per student (all time)
       Payment.aggregate([
         { $match: { purpose: 'Monthly Fee' } },
@@ -160,19 +158,10 @@ exports.getDashboardStats = async (req, res) => {
     // Build overdue detail list (used both for count and the overdue panel)
     const overdueStudents = activeStudents
       .map(student => {
-        const joinDate = new Date(student.createdAt || student.joinDate);
-        let totalCycles =
-          (today.getFullYear() - joinDate.getFullYear()) * 12 +
-          (today.getMonth()    - joinDate.getMonth()) + 1;
-        if (today.getDate() < joinDate.getDate()) totalCycles--;
-        if (totalCycles <= 0) return null;
-
-        const fee       = getMonthlyFee(student.classType);
         const totalPaid = paidMap.get(student._id.toString()) || 0;
-        const totalDue  = Math.max(0, totalCycles * fee - totalPaid);
-        if (totalDue <= 0) return null;
-
-        const pendingMonths = Math.ceil(totalDue / fee);
+        const dues = calculateDues(student, totalPaid, today);
+        if (dues.totalDue <= 0) return null;
+        const { totalDue, pendingMonths } = dues;
         return {
           _id:           student._id,
           studentName:   student.studentName,
@@ -217,7 +206,7 @@ exports.getUnpaidStudents = async (req, res) => {
   try {
     const today = new Date();
     const [students, monthlyFeePaidMap] = await Promise.all([
-      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType isActive createdAt lastAlertSent').lean(),
+      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType studentAge fee isActive createdAt lastAlertSent').lean(),
       Payment.aggregate([
         { $match: { purpose: 'Monthly Fee' } },
         { $group: { _id: '$studentId', totalPaid: { $sum: '$amount' } } }
@@ -227,16 +216,9 @@ exports.getUnpaidStudents = async (req, res) => {
     const paymentsByStudent = new Map(monthlyFeePaidMap.map(r => [r._id.toString(), r.totalPaid]));
 
     const unpaid = students.map(student => {
-      const joinDate = new Date(student.createdAt || student.joinDate);
-      let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
-      if (today.getDate() < joinDate.getDate()) totalCycles--;
-      
-      const fee = getMonthlyFee(student.classType);
       const totalPaid = paymentsByStudent.get(student._id.toString()) || 0;
-      const totalDue = Math.max(0, (totalCycles * fee) - totalPaid);
-      const pendingMonths = Math.ceil(totalDue / fee);
-
-      return { ...student, totalDue, pendingMonths };
+      const dues = calculateDues(student, totalPaid, today);
+      return { ...student, totalDue: dues.totalDue, pendingMonths: dues.pendingMonths };
     }).filter(s => s.pendingMonths > 0)
       .sort((a, b) => b.totalDue - a.totalDue);
 
@@ -265,31 +247,20 @@ exports.getStudentDues = async (req, res) => {
     if (!student) return res.status(404).json({ message: 'Student not found.' });
 
     const today = new Date();
-    const joinDate = new Date(student.createdAt || student.joinDate);
-    
-    let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
-    if (today.getDate() < joinDate.getDate()) totalCycles--;
-    
-    if (totalCycles <= 0) {
-      return res.json({ totalDue: 0, pendingMonths: 0, totalPaid: 0 });
-    }
-
-    const payments = await Payment.find({ 
-      studentId: student._id, 
-      purpose: 'Monthly Fee' 
+    const payments = await Payment.find({
+      studentId: student._id,
+      purpose: 'Monthly Fee'
     }).lean();
 
     const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-    const fee = getMonthlyFee(student.classType);
-    const totalDue = Math.max(0, (totalCycles * fee) - totalPaid);
-    const pendingMonths = Math.ceil(totalDue / fee);
+    const dues = calculateDues(student, totalPaid, today);
 
     res.json({
       studentName: student.studentName,
-      totalDue,
-      pendingMonths,
+      totalDue: dues.totalDue,
+      pendingMonths: dues.pendingMonths,
       totalPaid,
-      fee
+      fee: dues.fee
     });
   } catch (err) {
     if (err.name === 'CastError') {
@@ -303,8 +274,13 @@ exports.getStudentDues = async (req, res) => {
 // ─── POST /api/students ──────────────────────────────────────────────────────
 exports.createStudent = async (req, res) => {
   try {
-    const data = { ...req.body };
+      const data = { ...req.body };
 
+      // Auto-calculate fee based on age (always override if age provided)
+      if (data.studentAge) {
+        const ageNum = parseInt(data.studentAge, 10);
+        data.fee = ageNum <= 9 ? 1500 : 2500;
+      }
     // Field-name compatibility shims
     if (!data.studentName && data.name)     data.studentName = data.name;
     if (!data.createdAt   && data.joinDate) data.createdAt   = data.joinDate;
@@ -376,6 +352,11 @@ exports.updateStudent = async (req, res) => {
         return res.status(409).json({ message: 'Another student with this exact name and phone number already exists.' });
     }
 
+      // Auto-calculate fee on update based on age (override if age provided)
+      if (req.body.studentAge) {
+        const ageNum = parseInt(req.body.studentAge, 10);
+        req.body.fee = ageNum <= 9 ? 1500 : 2500;
+      }
     const updated = await Student.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true
