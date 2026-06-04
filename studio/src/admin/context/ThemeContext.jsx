@@ -9,7 +9,14 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => localStorage.getItem('admin-theme') || 'dark');
+  const [theme, setTheme] = useState(() => {
+    if (!localStorage.getItem('admin-theme-v2')) {
+      localStorage.setItem('admin-theme', 'light');
+      localStorage.setItem('admin-theme-v2', '1');
+      return 'light';
+    }
+    return localStorage.getItem('admin-theme') || 'light';
+  });
 
   useEffect(() => {
     localStorage.setItem('admin-theme', theme);

@@ -80,7 +80,7 @@ export const servicesData = [
 
 export const coreValues = [
   { title: "Excellence", desc: "We strive for the highest standards in dance education and performance.", emoji: "🎯" },
-  { title: "Creativity", desc: "We encourage artistic KJ and innovation in all dance forms.", emoji: "🎨" },
+  { title: "Creativity", desc: "We encourage artistic expression and innovation in all dance forms.", emoji: "🎨" },
   { title: "Community", desc: "We build a supportive and inclusive environment for all dancers.", emoji: "🤝" },
   { title: "Passion", desc: "We share our love for dance and inspire it in others.", emoji: "❤️" },
   { title: "Growth", desc: "We foster personal and artistic development at every level.", emoji: "📈" },

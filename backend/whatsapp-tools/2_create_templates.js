@@ -41,21 +41,21 @@ const TEMPLATES = [
     name    : 'welcome_message',
     category: 'MARKETING',
     language: 'en',
-    body    : 'Hi {{1}}, welcome to KJ Dance Studio! You are enrolled in {{2}} class. Batch timing: {{3}}. We are excited to have you! 💃',
+    body    : 'Hi {{1}}, welcome to expressionz Dance Studio! You are enrolled in {{2}} class. Batch timing: {{3}}. We are excited to have you! 💃',
     example : ['Ragu', 'Dance', '5:00 PM']
   },
   {
     name    : 'fee_remainder',
     category: 'UTILITY',
     language: 'en',
-    body    : 'Hi {{1}}, this is a reminder that your fee of Rs.{{2}} is pending for {{3}} month(s) at KJ Dance Studio. Please clear it soon. 🙏',
+    body    : 'Hi {{1}}, this is a reminder that your fee of Rs.{{2}} is pending for {{3}} month(s) at expressionz Dance Studio. Please clear it soon. 🙏',
     example : ['Ragu', '3500', '1']
   },
   {
     name    : 'payment_received',
     category: 'UTILITY',
     language: 'en',
-    body    : 'Hi {{1}}, we received your payment of Rs.{{2}} for {{3}} on {{4}} at KJ Dance Studio. Thank you! 🎉',
+    body    : 'Hi {{1}}, we received your payment of Rs.{{2}} for {{3}} on {{4}} at expressionz Dance Studio. Thank you! 🎉',
     example : ['Ragu', '3500', 'Monthly Fee', '21 May 2026']
   }
 ];

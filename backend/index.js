@@ -1,7 +1,7 @@
 /**
  * backend/index.js
  * ─────────────────────────────────────────────────────────────────────────────
- * KJ Dance Studio — Unified Backend Server
+ * expressionz Dance Studio — Unified Backend Server
  *
  * Architecture:
  *   • Express REST API  → /api/*

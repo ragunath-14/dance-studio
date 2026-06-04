@@ -64,9 +64,10 @@
 .logo-text h2 {
   margin: 0;
   color: var(--text-main);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 900;
   letter-spacing: -0.5px;
+  text-transform: none;
 }
 
 .logo-text p {

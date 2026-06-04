@@ -79,14 +79,14 @@
 }
 
 /* Dark mode overrides for filters */
-[data-theme="dark"] .admin-root .filter-select {
+.admin-root[data-theme="dark"] .filter-select {
   background-color: #1a1d28;
   border-color: #2a2e3d;
   color: #e2e8f0;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
-[data-theme="dark"] .admin-root .filter-select option {
+.admin-root[data-theme="dark"] .filter-select option {
   background-color: #1a1d28;
   color: #e2e8f0;
 }
@@ -422,47 +422,47 @@
 }
 
 /* ── Dark Theme Overrides ─────────────────────────────────────── */
-[data-theme="dark"] .admin-root .tabs {
+.admin-root[data-theme="dark"] .tabs {
   background-color: #0f1117;
 }
 
-[data-theme="dark"] .admin-root .tab-btn.active {
+.admin-root[data-theme="dark"] .tab-btn.active {
   background-color: #1a1d28;
 }
 
-[data-theme="dark"] .admin-root .tab-btn:hover:not(.active) {
+.admin-root[data-theme="dark"] .tab-btn:hover:not(.active) {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme="dark"] .admin-root .search-box {
+.admin-root[data-theme="dark"] .search-box {
   background-color: #1a1d28;
 }
 
-[data-theme="dark"] .admin-root .table-container {
+.admin-root[data-theme="dark"] .table-container {
   background-color: #1a1d28;
 }
 
-[data-theme="dark"] .admin-root .data-table th {
+.admin-root[data-theme="dark"] .data-table th {
   background-color: rgba(255, 255, 255, 0.02);
 }
 
-[data-theme="dark"] .admin-root .data-table tr:hover td {
+.admin-root[data-theme="dark"] .data-table tr:hover td {
   background-color: rgba(255, 140, 0, 0.03);
 }
 
-[data-theme="dark"] .admin-root .status-toggle-btn {
+.admin-root[data-theme="dark"] .status-toggle-btn {
   background: #1a1d28;
 }
 
-[data-theme="dark"] .admin-root .status-toggle-btn.inactive {
+.admin-root[data-theme="dark"] .status-toggle-btn.inactive {
   background: #1a1d28;
 }
 
-[data-theme="dark"] .admin-root .mini-badge.paid {
+.admin-root[data-theme="dark"] .mini-badge.paid {
   background-color: rgba(52, 211, 153, 0.1);
 }
 
-[data-theme="dark"] .admin-root .mini-badge.unpaid {
+.admin-root[data-theme="dark"] .mini-badge.unpaid {
   background-color: rgba(248, 113, 113, 0.1);
 }
 

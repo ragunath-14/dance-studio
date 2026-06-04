@@ -1,25 +1,10 @@
 :root {
-  --primary-color: #ED1C24;
-  --primary-hover: #d11920;
-  --bg-dark: #000000;
-  --bg-card: #111111;
-  --bg-sidebar: #000000;
-  --text-main: #ffffff;
-  --text-muted: #b0b0b0;
-  --border-color: #222222;
-  --success: #10b981;
-  --error: #ef4444;
-  --warning: #f59e0b;
-  --info: #3b82f6;
   --sidebar-width: 260px;
   --topbar-height: 70px;
-  /* Surface tokens (blueprint spec) */
-  --surface-overlay: rgba(17, 17, 17, 0.95);
-  --surface-subtle: rgba(255, 255, 255, 0.05);
 }
 
-/* ── Light Theme Overrides ───────────────────────────────────────── */
-[data-theme="light"] .admin-root {
+/* ── Light theme (default) ───────────────────────────────────────── */
+.admin-root {
   --primary-color: #ED1C24;
   --primary-hover: #d11920;
   --bg-dark: #f0f2f5;
@@ -32,8 +17,20 @@
   --error: #ef4444;
   --warning: #f59e0b;
   --info: #3b82f6;
-  --surface-overlay: rgba(255, 255, 255, 0.95);
-  --surface-subtle: rgba(0, 0, 0, 0.05);
+  --surface-overlay: rgba(255, 255, 255, 0.98);
+  --surface-subtle: rgba(0, 0, 0, 0.04);
+}
+
+/* ── Dark theme (optional toggle) ────────────────────────────────── */
+.admin-root[data-theme="dark"] {
+  --bg-dark: #000000;
+  --bg-card: #111111;
+  --bg-sidebar: #000000;
+  --text-main: #ffffff;
+  --text-muted: #b0b0b0;
+  --border-color: #222222;
+  --surface-overlay: rgba(17, 17, 17, 0.95);
+  --surface-subtle: rgba(255, 255, 255, 0.05);
 }
 
 .admin-root {
@@ -45,34 +42,30 @@
 .admin-root input,
 .admin-root select,
 .admin-root textarea {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: #ffffff;
   border-color: var(--border-color);
   color: var(--text-main);
   transition: all 0.2s ease;
 }
 
-[data-theme="light"] .admin-root input,
-[data-theme="light"] .admin-root select,
-[data-theme="light"] .admin-root textarea {
-  background-color: #ffffff;
-  border-color: var(--border-color);
-  color: var(--text-main);
-}
-
 .admin-root input:focus,
 .admin-root select:focus,
 .admin-root textarea:focus {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: #ffffff;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15);
 }
 
-[data-theme="light"] .admin-root input:focus,
-[data-theme="light"] .admin-root select:focus,
-[data-theme="light"] .admin-root textarea:focus {
-  background-color: #ffffff;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15);
+.admin-root[data-theme="dark"] input,
+.admin-root[data-theme="dark"] select,
+.admin-root[data-theme="dark"] textarea {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.admin-root[data-theme="dark"] input:focus,
+.admin-root[data-theme="dark"] select:focus,
+.admin-root[data-theme="dark"] textarea:focus {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .admin-root .skeleton-pulse {

@@ -34,6 +34,12 @@
   color: var(--primary);
 }
 
+.logo-text--brand {
+  text-transform: none;
+  letter-spacing: -0.5px;
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+}
+
 .scrolled .logo-text {
   color: var(--text-main);
 }

@@ -615,43 +615,43 @@
 }
 
 /* ── Dark Theme Overrides ─────────────────────────────────────── */
-[data-theme="dark"] .admin-root .date-display {
+.admin-root[data-theme="dark"] .date-display {
   background: var(--bg-card);
   border-color: var(--border-color);
 }
 
-[data-theme="dark"] .admin-root .stat-card {
+.admin-root[data-theme="dark"] .stat-card {
   background: var(--bg-card);
   border-color: var(--border-color);
 }
 
-[data-theme="dark"] .admin-root .stat-card:hover {
+.admin-root[data-theme="dark"] .stat-card:hover {
   border-color: var(--primary-color);
 }
 
-[data-theme="dark"] .admin-root .stat-value {
+.admin-root[data-theme="dark"] .stat-value {
   color: var(--text-main);
 }
 
-[data-theme="dark"] .admin-root .stat-trend {
+.admin-root[data-theme="dark"] .stat-trend {
   background: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme="dark"] .admin-root .card {
+.admin-root[data-theme="dark"] .card {
   background: var(--bg-card);
   border-color: var(--border-color);
 }
 
-[data-theme="dark"] .admin-root .pill-bar-wrap {
+.admin-root[data-theme="dark"] .pill-bar-wrap {
   background: #2a2e3d;
 }
 
-[data-theme="dark"] .admin-root .activity-entry:hover {
+.admin-root[data-theme="dark"] .activity-entry:hover {
   background: var(--surface-subtle);
   border-color: var(--border-color);
 }
 
-[data-theme="dark"] .admin-root .activity-icon {
+.admin-root[data-theme="dark"] .activity-icon {
   box-shadow: 0 4px 6px rgba(0,0,0,0.2);
 }
 

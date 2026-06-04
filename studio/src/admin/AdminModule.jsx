@@ -10,8 +10,18 @@ import RegistrationList from './components/students/RegistrationList';
 import ActivityLog from './components/ActivityLog';
 
 import Login from './pages/Login';
+import { useTheme } from './context/ThemeContext';
 import './App.css';
 import './AdminBase.css';
+
+const AdminRoot = ({ children }) => {
+  const { theme } = useTheme();
+  return (
+    <div className="admin-root" data-theme={theme}>
+      {children}
+    </div>
+  );
+};
 
 // Protected Route Component
 const ProtectedRoute = ({ children, isAuthenticated }) => {
@@ -38,7 +48,7 @@ const AdminModule = () => {
 
   return (
     <ThemeProvider>
-      <div className="admin-root">
+      <AdminRoot>
         <DataProvider isAuthenticated={isAuthenticated}>
           <Routes>
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
@@ -61,7 +71,7 @@ const AdminModule = () => {
             } />
           </Routes>
         </DataProvider>
-      </div>
+      </AdminRoot>
     </ThemeProvider>
   );
 };

@@ -39,7 +39,7 @@ const WelcomeModal = ({ showModal, setShowModal, onRegister }) => {
               </div>
               
               <div className="eds-logo-box-gold">
-                <div className="eds-logo">EDS</div>
+                <div className="eds-logo">expressionz</div>
                 <div className="logo-tagline">DANCE FIRST THINK LATER</div>
               </div>
             </header>

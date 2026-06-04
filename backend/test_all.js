@@ -37,7 +37,7 @@ function authHeaders() {
 }
 
 (async () => {
-  console.log('=== KJ Dance Studio API Tests ===');
+  console.log('=== expressionz Dance Studio API Tests ===');
   console.log(`Target: ${BASE_URL}`);
   console.log(`Time: ${new Date().toISOString()}\n`);
 

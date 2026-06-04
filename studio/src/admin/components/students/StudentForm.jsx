@@ -355,67 +355,12 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
 
       {/* Styled css overrides specifically for beautiful visuals in standard Modal */}
       <style>{`
-        /* Global Modal Structure Overrides for High-End Glassmorphism */
-        .modal {
-          background: linear-gradient(135deg, rgba(30, 41, 59, 0.97) 0%, rgba(15, 23, 42, 0.99) 100%) !important;
-          border: 1px solid rgba(255, 255, 255, 0.08) !important;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 0, 0, 0.3) !important;
-          border-radius: 24px !important;
-          backdrop-filter: blur(20px) !important;
-          -webkit-backdrop-filter: blur(20px) !important;
-          overflow: hidden !important;
-        }
-        
-        .modal-header {
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-          padding: 24px 32px !important;
-          background: rgba(15, 23, 42, 0.2) !important;
-        }
-
-        .modal-header h2 {
-          color: #ffffff !important;
-          font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-          font-weight: 850 !important;
-          font-size: 1.45rem !important;
-          letter-spacing: -0.025em !important;
-          background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%) !important;
-          -webkit-background-clip: text !important;
-          -webkit-text-fill-color: transparent !important;
-          margin: 0 !important;
-        }
-
-        .btn-close {
-          background: rgba(255, 255, 255, 0.03) !important;
-          border: 1px solid rgba(255, 255, 255, 0.08) !important;
-          border-radius: 12px !important;
-          width: 38px !important;
-          height: 38px !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          color: #94a3b8 !important; /* slate-400 */
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-          cursor: pointer !important;
-        }
-
-        .btn-close:hover {
-          background: rgba(239, 68, 68, 0.1) !important;
-          color: #f87171 !important;
-          border-color: rgba(239, 68, 68, 0.2) !important;
-          transform: rotate(90deg) !important;
-        }
-
-        .modal-content {
-          padding: 28px 36px !important;
-          background: transparent !important;
-        }
-
         .modern-student-form {
           position: relative;
           display: flex;
           flex-direction: column;
           gap: 18px;
-          color: #f8fafc !important;
+          color: var(--text-main) !important;
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
@@ -556,17 +501,16 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
           color: #f87171 !important;
         }
 
-        /* Custom gorgeous glowing input controls overriding light-mode defaults */
         .modern-student-form .sf-group input, 
         .modern-student-form .sf-group select, 
         .modern-student-form .sf-group textarea,
         .sf-group input, 
         .sf-group select, 
         .sf-group textarea {
-          background: rgba(255, 255, 255, 0.03) !important;
-          background-color: rgba(255, 255, 255, 0.03) !important;
-          border: 1px solid rgba(255, 255, 255, 0.08) !important;
-          color: #ffffff !important; /* bright white text */
+          background: #ffffff !important;
+          background-color: #ffffff !important;
+          border: 1px solid var(--border-color) !important;
+          color: var(--text-main) !important;
           padding: 12px 16px !important;
           border-radius: 12px !important;
           font-size: 0.9rem !important;
@@ -574,7 +518,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
           width: 100% !important;
           box-sizing: border-box !important;
           transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+          box-shadow: none !important;
           font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
         }
 
@@ -591,9 +535,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         .sf-group input:hover, 
         .sf-group select:hover, 
         .sf-group textarea:hover {
-          border-color: rgba(255, 255, 255, 0.15) !important;
-          background: rgba(255, 255, 255, 0.05) !important;
-          background-color: rgba(255, 255, 255, 0.05) !important;
+          border-color: #d1d5db !important;
         }
 
         .modern-student-form .sf-group input:focus, 
@@ -603,22 +545,13 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
         .sf-group select:focus, 
         .sf-group textarea:focus {
           border-color: #ED1C24 !important;
-          background: rgba(255, 255, 255, 0.06) !important;
-          background-color: rgba(255, 255, 255, 0.06) !important;
-          box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+          box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15) !important;
         }
 
-        /* Premium Calendar Picker Invert Icon for dark mode background consistency */
-        .modern-student-form input[type="date"]::-webkit-calendar-picker-indicator {
-          filter: invert(1) hue-rotate(180deg) brightness(1.2);
-          cursor: pointer;
-        }
-
-        /* Native select dropdown styles override */
         .modern-student-form .sf-group select option,
         .sf-group select option {
-          background-color: #111111 !important; /* Premium dark background */
-          color: #ffffff !important;
+          background-color: #ffffff !important;
+          color: #111827 !important;
           padding: 12px !important;
         }
 

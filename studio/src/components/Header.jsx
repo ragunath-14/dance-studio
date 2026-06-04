@@ -1,13 +1,16 @@
 import { X, Menu, Settings, UserPlus } from '../icons'
 import './Header.css'
 import { navLinks } from '../constants'
+import { STUDIO_NAME } from '../branding'
 
 const Header = ({ isScrolled, isMenuOpen, setIsMenuOpen, onRegister }) => {
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container header-container">
         <div className="logo">
-          <h1 className="logo-text">KJ<span>.</span></h1>
+          <h1 className="logo-text logo-text--brand">
+            {STUDIO_NAME.slice(0, -1)}<span>{STUDIO_NAME.slice(-1)}</span>
+          </h1>
         </div>
         
         <nav className={`nav ${isMenuOpen ? 'nav-open' : ''}`}>
