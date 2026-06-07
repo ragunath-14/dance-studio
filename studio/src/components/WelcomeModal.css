@@ -101,11 +101,9 @@
 .eds-logo-box-gold {
   background: #000;
   border: 3px solid #f97316;
-  padding: 0.5rem 0.35rem;
+  padding: 0.5rem;
   text-align: center;
-  width: auto;
-  min-width: 100px;
-  max-width: 140px;
+  width: 90px;
   position: relative;
 }
 
@@ -119,11 +117,9 @@
 
 .eds-logo {
   font-weight: 900;
-  font-size: 0.95rem;
+  font-size: 1.6rem;
   color: #fb923c;
-  line-height: 1.1;
-  text-transform: lowercase;
-  letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 .logo-tagline {

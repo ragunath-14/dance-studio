@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2600;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   padding: 20px;
@@ -206,33 +206,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1200;
+  z-index: 2700;
   padding: 20px;
 }
 
 .admin-root .history-modal {
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-color) !important;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.99) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 24px !important;
   width: 720px !important;
   max-width: 100% !important;
   max-height: 85vh !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(237, 28, 36, 0.05) !important;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  color: var(--text-main);
+  color: #ffffff;
   margin: auto;
 }
 
 .admin-root .history-header {
   padding: 24px 32px !important;
-  border-bottom: 1px solid var(--border-color) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--bg-card);
+  background: rgba(15, 23, 42, 0.2);
   flex-shrink: 0;
 }
 
@@ -241,19 +241,21 @@
   font-weight: 850 !important;
   margin: 0 !important;
   letter-spacing: -0.025em;
-  color: var(--text-main) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 .admin-root .history-header p {
   font-size: 0.8rem !important;
-  color: var(--text-muted) !important;
+  color: #94a3b8 !important;
   margin: 4px 0 0 0 !important;
   font-weight: 500;
 }
 
 .admin-root .history-close-btn {
-  background: var(--bg-dark) !important;
-  border: 1px solid var(--border-color) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 12px !important;
   width: 38px !important;
   height: 38px !important;
@@ -278,7 +280,7 @@
   grid-template-columns: 1fr 1fr 1fr !important;
   gap: 16px !important;
   padding: 24px 32px !important;
-  background: var(--bg-dark);
+  background: rgba(15, 23, 42, 0.1);
   flex-shrink: 0;
 }
 
@@ -288,8 +290,8 @@
   gap: 14px !important;
   padding: 16px !important;
   border-radius: 16px !important;
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-color) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
   transition: all 0.25s ease;
 }
 
@@ -315,7 +317,7 @@
 .admin-root .hs-card span {
   font-size: 0.7rem !important;
   font-weight: 750 !important;
-  color: var(--text-muted) !important;
+  color: #94a3b8 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
   white-space: nowrap;
@@ -324,7 +326,7 @@
 .admin-root .hs-card strong {
   font-size: 1.1rem !important;
   font-weight: 850 !important;
-  color: var(--text-main);
+  color: #ffffff;
 }
 
 /* Card Themes */
@@ -370,24 +372,25 @@
 }
 
 .admin-root .history-table th {
-  color: var(--text-muted) !important;
+  color: #64748b !important;
   font-weight: 700 !important;
   font-size: 0.72rem !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
-  border-bottom: 1px solid var(--border-color) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   padding: 10px 12px !important;
   text-align: left;
 }
 
 .admin-root .history-table td {
   padding: 12px 12px !important;
-  border-bottom: 1px solid var(--border-color) !important;
-  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  color: #cbd5e1 !important;
 }
 
 .admin-root .history-table tr:hover td {
-  background: var(--surface-subtle) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  color: #ffffff !important;
 }
 
 /* History Footer */
@@ -396,8 +399,8 @@
   justify-content: flex-end;
   gap: 12px;
   padding: 20px 32px 24px !important;
-  border-top: 1px solid var(--border-color) !important;
-  background: var(--bg-card) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(15, 23, 42, 0.2) !important;
   flex-shrink: 0;
 }
 
@@ -442,8 +445,8 @@
   grid-template-columns: 1fr 1fr !important;
   gap: 12px 24px !important;
   padding: 18px 32px !important;
-  background: var(--bg-dark) !important;
-  border-bottom: 1px solid var(--border-color) !important;
+  background: rgba(15, 23, 42, 0.15) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
   flex-shrink: 0;
 }
 
@@ -459,7 +462,7 @@
 }
 
 .admin-root .metadata-item span {
-  color: var(--text-muted) !important;
+  color: #64748b !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   font-size: 0.68rem !important;
@@ -469,7 +472,7 @@
 }
 
 .admin-root .metadata-item strong {
-  color: var(--text-main) !important;
+  color: #f8fafc !important;
   font-weight: 700 !important;
 }
 

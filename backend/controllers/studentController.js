@@ -1,7 +1,9 @@
 const Student  = require('../models/Student');
 const Payment  = require('../models/Payment');
 const whatsapp = require('../services/whatsappService');
-const { getMonthlyFee, calculateDues } = require('../utils/feeUtils');
+
+// ─── Fee helper ──────────────────────────────────────────────────────────────
+const getMonthlyFee = (student) => { const ageNum = parseInt(student.studentAge, 10); return ageNum <= 9 ? 1500 : 2500; };
 
 // ─── Format mongoose validation errors ───────────────────────────────────────
 const formatValidationErrors = (err) =>
@@ -94,7 +96,7 @@ exports.getDashboardStats = async (req, res) => {
 
     // Parallel fetch — aggregate monthly-fee totals per student in one DB call
     const [students, monthlyFeePaidMap, monthRevenue, lifetimeRevenue, pendingRegistrations, recentRegistrations] = await Promise.all([
-      Student.find().select('studentName phone whatsappNumber classType studentAge fee isActive createdAt lastAlertSent').lean(),
+      Student.find().select('studentName phone whatsappNumber classType isActive createdAt lastAlertSent').lean(),
       // O(M) aggregation: total Monthly Fee paid per student (all time)
       Payment.aggregate([
         { $match: { purpose: 'Monthly Fee' } },
@@ -158,10 +160,19 @@ exports.getDashboardStats = async (req, res) => {
     // Build overdue detail list (used both for count and the overdue panel)
     const overdueStudents = activeStudents
       .map(student => {
+        const joinDate = new Date(student.createdAt || student.joinDate);
+        let totalCycles =
+          (today.getFullYear() - joinDate.getFullYear()) * 12 +
+          (today.getMonth()    - joinDate.getMonth()) + 1;
+        if (today.getDate() < joinDate.getDate()) totalCycles--;
+        if (totalCycles <= 0) return null;
+
+        const fee       = getMonthlyFee(student);
         const totalPaid = paidMap.get(student._id.toString()) || 0;
-        const dues = calculateDues(student, totalPaid, today);
-        if (dues.totalDue <= 0) return null;
-        const { totalDue, pendingMonths } = dues;
+        const totalDue  = Math.max(0, totalCycles * fee - totalPaid);
+        if (totalDue <= 0) return null;
+
+        const pendingMonths = Math.ceil(totalDue / fee);
         return {
           _id:           student._id,
           studentName:   student.studentName,
@@ -206,7 +217,7 @@ exports.getUnpaidStudents = async (req, res) => {
   try {
     const today = new Date();
     const [students, monthlyFeePaidMap] = await Promise.all([
-      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType studentAge fee isActive createdAt lastAlertSent').lean(),
+      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType isActive createdAt lastAlertSent').lean(),
       Payment.aggregate([
         { $match: { purpose: 'Monthly Fee' } },
         { $group: { _id: '$studentId', totalPaid: { $sum: '$amount' } } }
@@ -216,9 +227,16 @@ exports.getUnpaidStudents = async (req, res) => {
     const paymentsByStudent = new Map(monthlyFeePaidMap.map(r => [r._id.toString(), r.totalPaid]));
 
     const unpaid = students.map(student => {
+      const joinDate = new Date(student.createdAt || student.joinDate);
+      let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
+      if (today.getDate() < joinDate.getDate()) totalCycles--;
+      
+      const fee = getMonthlyFee(student);
       const totalPaid = paymentsByStudent.get(student._id.toString()) || 0;
-      const dues = calculateDues(student, totalPaid, today);
-      return { ...student, totalDue: dues.totalDue, pendingMonths: dues.pendingMonths };
+      const totalDue = Math.max(0, (totalCycles * fee) - totalPaid);
+      const pendingMonths = Math.ceil(totalDue / fee);
+
+      return { ...student, totalDue, pendingMonths };
     }).filter(s => s.pendingMonths > 0)
       .sort((a, b) => b.totalDue - a.totalDue);
 
@@ -247,20 +265,31 @@ exports.getStudentDues = async (req, res) => {
     if (!student) return res.status(404).json({ message: 'Student not found.' });
 
     const today = new Date();
-    const payments = await Payment.find({
-      studentId: student._id,
-      purpose: 'Monthly Fee'
+    const joinDate = new Date(student.createdAt || student.joinDate);
+    
+    let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
+    if (today.getDate() < joinDate.getDate()) totalCycles--;
+    
+    if (totalCycles <= 0) {
+      return res.json({ totalDue: 0, pendingMonths: 0, totalPaid: 0 });
+    }
+
+    const payments = await Payment.find({ 
+      studentId: student._id, 
+      purpose: 'Monthly Fee' 
     }).lean();
 
     const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-    const dues = calculateDues(student, totalPaid, today);
+    const fee = getMonthlyFee(student);
+    const totalDue = Math.max(0, (totalCycles * fee) - totalPaid);
+    const pendingMonths = Math.ceil(totalDue / fee);
 
     res.json({
       studentName: student.studentName,
-      totalDue: dues.totalDue,
-      pendingMonths: dues.pendingMonths,
+      totalDue,
+      pendingMonths,
       totalPaid,
-      fee: dues.fee
+      fee
     });
   } catch (err) {
     if (err.name === 'CastError') {

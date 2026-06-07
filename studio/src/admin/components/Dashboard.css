@@ -473,7 +473,20 @@
 
 @media (max-width: 600px) {
   .admin-root .overdue-row {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 14px 16px;
+  }
+  .admin-root .overdue-badges {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .admin-root .reminder-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 

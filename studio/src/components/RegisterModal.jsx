@@ -1,75 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, User, Phone, MessageCircle, Calendar, Users } from '../icons.jsx'
 import API_URL from '../config'
-import { STUDIO_FULL_NAME } from '../branding'
 import './RegisterModal.css'
-
-const GENDER_OPTIONS = [
-  { value: 'Male', label: 'Male' },
-  { value: 'Female', label: 'Female' },
-  { value: 'Other', label: 'Other' },
-]
-
-const RegSelect = ({ value, options, onChange, placeholder, hasError }) => {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef(null)
-
-  useEffect(() => {
-    if (!open) return undefined
-    const onPointerDown = (e) => {
-      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false)
-    }
-    const onKeyDown = (e) => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
-
-  const selected = options.find((o) => o.value === value)
-
-  return (
-    <div ref={rootRef} className={`reg-select ${open ? 'is-open' : ''} ${hasError ? 'error' : ''}`}>
-      <button
-        type="button"
-        className="reg-select-trigger"
-        onClick={() => setOpen((prev) => !prev)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className={!selected ? 'reg-select-placeholder' : undefined}>
-          {selected ? selected.label : placeholder}
-        </span>
-        <svg className="reg-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-      {open && (
-        <ul className="reg-select-menu" role="listbox">
-          {options.map((opt) => (
-            <li
-              key={opt.value}
-              role="option"
-              aria-selected={value === opt.value}
-              className={value === opt.value ? 'selected' : ''}
-              onClick={() => {
-                onChange(opt.value)
-                setOpen(false)
-              }}
-            >
-              {opt.label}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
 
 const RegisterModal = ({ showModal, setShowModal }) => {
   const [formData, setFormData] = useState({
@@ -184,9 +117,8 @@ const RegisterModal = ({ showModal, setShowModal }) => {
           </button>
           
           <div className="reg-header">
-            <span className="reg-badge">New Student</span>
-            <h2>Student Registration</h2>
-            <p>Join the {STUDIO_FULL_NAME} family — we&apos;ll confirm your slot shortly.</p>
+            <h2>STUDENT REGISTRATION</h2>
+            <p>Join the Expressionz Dance Studio family today!</p>
           </div>
           
           <form className="reg-form" onSubmit={handleSubmit} noValidate>
@@ -257,7 +189,7 @@ const RegisterModal = ({ showModal, setShowModal }) => {
                 <label>
                   <Calendar size={14} className="reg-icon" /> AGE
                   {formData.studentAge && !isNaN(parseInt(formData.studentAge)) && (
-                    <span className="reg-age-hint">
+                    <span style={{ color: '#aaa', marginLeft: '6px', fontSize: '0.75rem', fontWeight: 'normal', textTransform: 'none' }}>
                       {parseInt(formData.studentAge) <= 9 ? '— Kids' : '— Adults'}
                     </span>
                   )}
@@ -274,12 +206,12 @@ const RegisterModal = ({ showModal, setShowModal }) => {
                 <label>
                   <Users size={14} className="reg-icon" /> GENDER
                 </label>
-                <RegSelect
-                  value={formData.gender}
-                  options={GENDER_OPTIONS}
-                  placeholder="Select Gender"
-                  onChange={(val) => setFormData((p) => ({ ...p, gender: val }))}
-                />
+                <select name="gender" value={formData.gender} onChange={handleChange}>
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
             

@@ -58,7 +58,7 @@ const About = () => {
           >
             <h2 className="about-title">Our Vision</h2>
             <p className="about-text">
-              At expressionz, we envision a world where dance is a universal language that connects people, transcends boundaries, and empowers individuals to express their authentic selves.
+              At Expressionz, we envision a world where dance is a universal language that connects people, transcends boundaries, and empowers individuals to express their authentic selves.
             </p>
             <p className="about-text">
               We strive to be a catalyst for artistic innovation, nurturing the next generation of dancers who will shape the future of performing arts with creativity, technical excellence, and passion.

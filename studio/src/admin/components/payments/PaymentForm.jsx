@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import Button from '../ui/Button';
 import { Search, User, CreditCard, TrendingDown, CheckCircle } from 'lucide-react';
-import { calculateDues } from '../../utils/feeUtils';
 
 const PaymentForm = ({ formData, setFormData, students = [], payments = [], currentDebt, isEditing, editingPaymentAmount = 0, onSubmit, onCancel }) => {
   const initialStudentName = useMemo(() => {
@@ -50,7 +49,17 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
 
   const duesInfo = useMemo(() => {
     if (!selectedStudent) return null;
+    const today = new Date();
+    const getMonthlyFee = (ct) => ct === 'Fitness Class' ? 2500 : 3500;
+    const joinDate = new Date(selectedStudent.createdAt || selectedStudent.joinDate || today);
+    let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
+    if (today.getDate() < joinDate.getDate()) totalCycles--;
+    if (totalCycles <= 0) totalCycles = 0;
 
+    const fee = getMonthlyFee(selectedStudent.classType);
+
+    // Prefer server-side totalPaid (already aggregated from full payment history)
+    // Fall back to filtering the paginated payments prop (less accurate but better than nothing)
     let totalPaid = selectedStudent.totalPaid ?? null;
     if (totalPaid === null) {
       const studentFeePayments = payments.filter(p => {
@@ -60,18 +69,14 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
       totalPaid = studentFeePayments.reduce((s, p) => s + (p.amount || 0), 0);
     }
 
+    // When editing, add back the original payment amount to get accurate balance
     if (isEditing && editingPaymentAmount > 0) {
       totalPaid -= editingPaymentAmount;
     }
 
-    const dues = calculateDues(selectedStudent, totalPaid);
-    return {
-      totalPaid,
-      totalExpected: dues.totalExpected,
-      totalDue: dues.totalDue,
-      fee: dues.fee,
-      totalCycles: dues.totalCycles,
-    };
+    const totalExpected = totalCycles * fee;
+    const totalDue = Math.max(0, totalExpected - totalPaid);
+    return { totalPaid, totalExpected, totalDue, fee, totalCycles };
   }, [selectedStudent, payments, isEditing, editingPaymentAmount]);
 
   // ── Progress bar calculation ──
@@ -277,11 +282,67 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
 
       {/* Styled css overrides specifically for beautiful visuals in standard Modal */}
       <style>{`
+        /* Global Modal Structure Overrides for High-End Glassmorphism */
+        .modal {
+          background: linear-gradient(135deg, rgba(30, 41, 59, 0.97) 0%, rgba(15, 23, 42, 0.99) 100%) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 0, 0, 0.3) !important;
+          border-radius: 24px !important;
+          backdrop-filter: blur(20px) !important;
+          -webkit-backdrop-filter: blur(20px) !important;
+          overflow: hidden !important;
+        }
+        
+        .modal-header {
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+          padding: 24px 32px !important;
+          background: rgba(15, 23, 42, 0.2) !important;
+        }
+
+        .modal-header h2 {
+          color: #ffffff !important;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+          font-weight: 850 !important;
+          font-size: 1.45rem !important;
+          letter-spacing: -0.025em !important;
+          background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%) !important;
+          -webkit-background-clip: text !important;
+          -webkit-text-fill-color: transparent !important;
+          margin: 0 !important;
+        }
+
+        .btn-close {
+          background: rgba(255, 255, 255, 0.03) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          border-radius: 12px !important;
+          width: 38px !important;
+          height: 38px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          color: #94a3b8 !important; /* slate-400 */
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          cursor: pointer !important;
+        }
+
+        .btn-close:hover {
+          background: rgba(239, 68, 68, 0.1) !important;
+          color: #f87171 !important;
+          border-color: rgba(239, 68, 68, 0.2) !important;
+          transform: rotate(90deg) !important;
+        }
+
+        .modal-content {
+          padding: 28px 36px !important;
+          background: transparent !important;
+        }
+
+        /* Form Layout Styles */
         .modern-payment-form {
           display: flex;
           flex-direction: column;
           gap: 20px;
-          color: var(--text-main) !important;
+          color: #f8fafc !important;
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
@@ -295,7 +356,7 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
         .pf-label {
           font-size: 0.8rem !important;
           font-weight: 700 !important;
-          color: var(--text-muted) !important;
+          color: #94a3b8 !important; /* slate-400 */
           margin-bottom: 2px !important;
           letter-spacing: 0.03em !important;
           text-transform: uppercase !important;
@@ -310,9 +371,9 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
         /* Inputs & Selectors */
         .modern-payment-form input,
         .modern-payment-form select {
-          background: #ffffff !important;
-          border: 1px solid var(--border-color) !important;
-          color: var(--text-main) !important;
+          background: rgba(255, 255, 255, 0.03) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          color: #ffffff !important;
           padding: 12px 16px !important;
           border-radius: 12px !important;
           font-size: 0.9rem !important;
@@ -320,7 +381,7 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
           width: 100% !important;
           box-sizing: border-box !important;
           transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-          box-shadow: none !important;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
           font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
         }
 
@@ -330,18 +391,20 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
 
         .modern-payment-form input:hover,
         .modern-payment-form select:hover {
-          border-color: #d1d5db !important;
+          border-color: rgba(255, 255, 255, 0.15) !important;
+          background: rgba(255, 255, 255, 0.05) !important;
         }
 
         .modern-payment-form input:focus,
         .modern-payment-form select:focus {
           border-color: #ED1C24 !important;
-          box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15) !important;
+          background: rgba(255, 255, 255, 0.06) !important;
+          box-shadow: 0 0 0 3px rgba(237, 28, 36, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
         }
 
         .modern-payment-form select option {
-          background-color: #ffffff !important;
-          color: #111827 !important;
+          background-color: #111111 !important; /* Premium dark background */
+          color: #ffffff !important;
           padding: 12px !important;
         }
 
@@ -654,7 +717,7 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
         }
 
         .stat-val.paying-now {
-          color: #ED1C24 !important; /* Soft Red KJ */
+          color: #ED1C24 !important; /* Soft Red Expressionz */
         }
 
         .stat-val.remaining.pending {

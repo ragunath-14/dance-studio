@@ -1,5 +1,4 @@
 const axios = require('axios');
-const { STUDIO_FULL_NAME } = require('../branding');
 
 // ── Global Message Queue ─────────────────────────────────────────────────────
 // Ensures all notifications are sent in an orderly sequence with a small
@@ -65,7 +64,7 @@ const sendMessage = async (whatsappNumber, fallbackText, options = {}) => {
         if (options.components) payload.template.components = options.components;
       } else {
         payload.type = 'text';
-        payload.text = { body: fallbackText || `Hello from ${STUDIO_FULL_NAME}!` };
+        payload.text = { body: fallbackText || 'Hello from Expressionz Dance Studio!' };
       }
       return payload;
     };
@@ -127,7 +126,7 @@ exports.sendWelcomeMessage = async (whatsappNumber, studentName, classType, batc
   const timing = batchTiming || 'TBA';
 
   const fallback =
-    `Hi ${name}, welcome to ${STUDIO_FULL_NAME}! ` +
+    `Hi ${name}, welcome to Expressionz Dance Studio! ` +
     `You are enrolled in ${cls} class. Batch timing: ${timing}. We are excited to have you! 💃`;
 
   return sendMessage(whatsappNumber, fallback, {
@@ -156,7 +155,7 @@ exports.sendPendingFeesAlert = async (studentId, whatsappNumber, studentName, pe
 
   const fallback =
     `Hi ${name}, this is a reminder that your fee of Rs.${due} is pending ` +
-    `for ${months} month(s) at ${STUDIO_FULL_NAME}. Please clear it soon. 🙏`;
+    `for ${months} month(s) at Expressionz Dance Studio. Please clear it soon. 🙏`;
 
   return sendMessage(whatsappNumber, fallback, {
     templateName: 'fee_remainder',
@@ -183,7 +182,7 @@ exports.sendPaymentConfirmation = async (whatsappNumber, studentName, amount, pu
 
   const fallback =
     `Hi ${name}, we received your payment of Rs.${amt} for ${purp} on ${formattedDate} ` +
-    `at ${STUDIO_FULL_NAME}. Thank you! 🎉`;
+    `at Expressionz Dance Studio. Thank you! 🎉`;
 
   return sendMessage(whatsappNumber, fallback, {
     templateName: 'payment_received',
@@ -213,7 +212,7 @@ exports.sendRegistrationConfirmation = async (whatsappNumber, studentName, class
   const cls  = classType   || 'Dance';
 
   const fallback =
-    `Hi ${name}, thank you for registering with ${STUDIO_FULL_NAME}! ` +
+    `Hi ${name}, thank you for registering with Expressionz Dance Studio! ` +
     `Your request to join the ${cls} class has been received and is pending approval. ` +
     `We will contact you soon! 🎉`;
 
@@ -224,7 +223,8 @@ exports.sendRegistrationConfirmation = async (whatsappNumber, studentName, class
       type      : 'body',
       parameters: [
         { type: 'text', text: name },
-        { type: 'text', text: cls  }
+        { type: 'text', text: cls  },
+        { type: 'text', text: 'Pending Approval' }
       ]
     }]
   });

@@ -1,7 +1,9 @@
 const Payment  = require('../models/Payment');
 const Student  = require('../models/Student');
 const whatsapp = require('../services/whatsappService');
-const { calculateDues } = require('../utils/feeUtils');
+
+// ─── Fee helper ──────────────────────────────────────────────────────────────
+const getMonthlyFee = (classType) => classType === 'Fitness Class' ? 2500 : 3500;
 
 // ─── GET /api/payments ───────────────────────────────────────────────────────
 // ─── GET /api/payments (Paginated) ──────────────────────────────────────────
@@ -171,7 +173,7 @@ exports.sendPendingAlerts = async (req, res) => {
   try {
     const today = new Date();
     const [students, monthlyFeePaidMap] = await Promise.all([
-      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType studentAge fee isActive createdAt lastAlertSent').lean(),
+      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType isActive createdAt lastAlertSent').lean(),
       Payment.aggregate([
         { $match: { purpose: 'Monthly Fee' } },
         { $group: { _id: '$studentId', totalPaid: { $sum: '$amount' } } }
@@ -184,11 +186,20 @@ exports.sendPendingAlerts = async (req, res) => {
     const results = [];
 
     for (const student of students) {
-      const totalPaid = paidByStudent.get(student._id.toString()) || 0;
-      const dues = calculateDues(student, totalPaid, today);
-      if (dues.totalCycles <= 0 || dues.totalDue <= 0) continue;
+      const joinDate = new Date(student.createdAt || student.joinDate);
+      let totalCycles =
+        (today.getFullYear() - joinDate.getFullYear()) * 12 +
+        (today.getMonth()    - joinDate.getMonth()) + 1;
 
-      const { totalDue, pendingMonths } = dues;
+      if (today.getDate() < joinDate.getDate()) totalCycles--;
+      if (totalCycles <= 0) continue;   // Joined this month — no dues yet
+
+      const fee          = getMonthlyFee(student.classType);
+      const totalPaid    = paidByStudent.get(student._id.toString()) || 0;
+      const totalDue     = Math.max(0, totalCycles * fee - totalPaid);
+      if (totalDue <= 0) continue;
+
+      const pendingMonths = Math.ceil(totalDue / fee);
       const whatsappNum   = student.whatsappNumber || student.phone;
 
       let alertResult = { success: false, reason: 'no_number' };
@@ -247,13 +258,20 @@ exports.sendStudentReminder = async (req, res) => {
 
     const payments = await Payment.find({ studentId, purpose: 'Monthly Fee' }).lean();
     const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-    const dues = calculateDues(student, totalPaid, today);
 
-    if (dues.totalCycles <= 0) {
+    const joinDate = new Date(student.createdAt || student.joinDate);
+    let totalCycles =
+      (today.getFullYear() - joinDate.getFullYear()) * 12 +
+      (today.getMonth()    - joinDate.getMonth()) + 1;
+    if (today.getDate() < joinDate.getDate()) totalCycles--;
+
+    if (totalCycles <= 0) {
       return res.json({ success: false, message: 'No dues yet — student joined this month.' });
     }
 
-    const { totalDue, pendingMonths } = dues;
+    const fee           = getMonthlyFee(student.classType);
+    const totalDue      = Math.max(0, totalCycles * fee - totalPaid);
+    const pendingMonths = Math.ceil(totalDue / fee);
 
     if (totalDue <= 0) {
       return res.json({ success: false, message: 'Student has no outstanding dues.' });

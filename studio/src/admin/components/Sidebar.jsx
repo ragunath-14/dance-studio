@@ -2,7 +2,6 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, CreditCard, UserPlus, Activity, Menu, ChevronRight, Music } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { STUDIO_NAME, STUDIO_TAGLINE } from '../../branding';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, onClose, isExpanded, onToggleExpand }) => {
@@ -23,8 +22,8 @@ const Sidebar = ({ isOpen, onClose, isExpanded, onToggleExpand }) => {
           <Music size={28} strokeWidth={2.5} className="logo-icon" />
         </div>
         <div className="logo-text">
-          <h2>{STUDIO_NAME}</h2>
-          <p>{STUDIO_TAGLINE}</p>
+          <h2>Expressionz</h2>
+          <p>Fitness Studio</p>
         </div>
       </div>
 

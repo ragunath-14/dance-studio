@@ -1,7 +1,7 @@
 /**
  * backend/index.js
  * ─────────────────────────────────────────────────────────────────────────────
- * expressionz Dance Studio — Unified Backend Server
+ * Expressionz Dance Studio — Unified Backend Server
  *
  * Architecture:
  *   • Express REST API  → /api/*

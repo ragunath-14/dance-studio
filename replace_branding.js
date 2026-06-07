@@ -5,13 +5,17 @@ const directories = ['studio/src', 'studio/index.html', 'backend/index.js', 'bac
 
 const replaceInFile = (filePath) => {
   let content = fs.readFileSync(filePath, 'utf8');
-  const originalContent = content;
+  let originalContent = content;
 
-  content = content.replace(/KJ Dance Studio/gi, 'expressionz Dance Studio');
-  content = content.replace(/KJ Dance & Fitness Studio/gi, 'expressionz Dance Studio');
-  content = content.replace(/KJ Dance Academy/gi, 'expressionz');
-  content = content.replace(/KJ Dance/gi, 'expressionz');
-  content = content.replace(/\bKJ\b/g, 'expressionz');
+  // Replace various permutations
+  content = content.replace(/KJ Dance Studio/gi, 'Expressionz Dance Studio');
+  content = content.replace(/KJ Dance & Fitness Studio/gi, 'Expressionz Dance Studio');
+  content = content.replace(/KJ Dance Academy/gi, 'Expressionz');
+  content = content.replace(/KJ Dance/gi, 'Expressionz');
+  content = content.replace(/\bKJ\b/g, 'Expressionz');
+  
+  // Specific fix for URL if any
+  content = content.replace(/kjdancestudio\.in/gi, 'expressionzdancestudio.in');
 
   if (content !== originalContent) {
     fs.writeFileSync(filePath, content, 'utf8');
@@ -23,7 +27,7 @@ const processPath = (itemPath) => {
   if (!fs.existsSync(itemPath)) return;
   const stat = fs.statSync(itemPath);
   if (stat.isDirectory()) {
-    fs.readdirSync(itemPath).forEach((file) => {
+    fs.readdirSync(itemPath).forEach(file => {
       processPath(path.join(itemPath, file));
     });
   } else if (stat.isFile() && /\.(js|jsx|html|md|json)$/.test(itemPath)) {
@@ -31,5 +35,5 @@ const processPath = (itemPath) => {
   }
 };
 
-directories.forEach((dir) => processPath(path.join(__dirname, dir)));
-console.log('Rebranding to expressionz complete!');
+directories.forEach(dir => processPath(path.join(__dirname, dir)));
+console.log('Rebranding complete!');

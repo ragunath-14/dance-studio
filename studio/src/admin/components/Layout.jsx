@@ -4,7 +4,6 @@ import { NavLink } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useTheme } from '../context/ThemeContext';
 import Sidebar from './Sidebar';
-import { STUDIO_ADMIN_TITLE } from '../../branding';
 import './Layout.css';
 
 const Layout = ({ children, onLogout }) => {
@@ -27,12 +26,13 @@ const Layout = ({ children, onLogout }) => {
   return (
     <div 
       className={`layout ${isMobileMenuOpen ? 'mobile-menu-open' : ''} ${isSidebarExpanded ? 'sidebar-expanded' : 'sidebar-collapsed'}`}
+      data-theme={theme}
     >
       <div className="mobile-header">
         <button className="menu-toggle" onClick={toggleMobileMenu}>
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <h1>{STUDIO_ADMIN_TITLE}</h1>
+        <h1>Expressionz Studio Admin</h1>
         
         {/* Mobile Header Actions */}
         <button onClick={toggleTheme} className="mobile-theme-btn" style={{ marginLeft: 'auto' }}>

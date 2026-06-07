@@ -19,7 +19,7 @@ async function run() {
     console.log(`❌ ${fe.label}: NOT RUNNING (${fe.error})`);
   } else {
     console.log(`✅ ${fe.label}: Status ${fe.status}`);
-    console.log(`   Title contains "expressionz Dance Studio": ${fe.data.includes('expressionz Dance Studio')}`);
+    console.log(`   Title contains "KJ Dance Studio": ${fe.data.includes('KJ Dance Studio')}`);
     console.log(`   Has root div: ${fe.data.includes('id="root"')}`);
   }
 
@@ -29,7 +29,7 @@ async function run() {
     console.log(`❌ ${be.label}: NOT RUNNING (${be.error})`);
   } else {
     console.log(`✅ ${be.label}: Status ${be.status}`);
-    console.log(`   Title contains "expressionz Dance Studio": ${be.data.includes('expressionz Dance Studio')}`);
+    console.log(`   Title contains "KJ Dance Studio": ${be.data.includes('KJ Dance Studio')}`);
     console.log(`   Serving HTML: ${be.data.includes('<!doctype html>')}`);
   }
 

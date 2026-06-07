@@ -3,7 +3,6 @@ import axios from 'axios';
 import { X, CreditCard, Calendar, TrendingDown } from 'lucide-react';
 import API_URL from '../../config';
 import Button from '../ui/Button';
-import { calculateDues } from '../../utils/feeUtils';
 
 const PaymentHistoryModal = ({ student, onClose, onRecordPayment }) => {
   const [studentPayments, setStudentPayments] = useState([]);
@@ -41,9 +40,18 @@ const PaymentHistoryModal = ({ student, onClose, onRecordPayment }) => {
 
   if (!student) return null;
 
+  const getMonthlyFee = (ct) => ct === 'Fitness Class' ? 2500 : 3500;
+  const today = new Date();
+
+  const joinDate = new Date(student.createdAt || student.joinDate || today);
+  let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
+  if (today.getDate() < joinDate.getDate()) totalCycles--;
+  if (totalCycles < 0) totalCycles = 0;
+
+  const fee = getMonthlyFee(student.classType);
   const totalPaid = studentPayments.reduce((s, p) => s + (p.amount || 0), 0);
-  const dues = calculateDues(student, totalPaid);
-  const { totalDue, fee, totalExpected } = dues;
+  const totalExpected = totalCycles * fee;
+  const totalDue = Math.max(0, totalExpected - totalPaid);
 
   return (
     <div className="history-overlay" onClick={onClose}>

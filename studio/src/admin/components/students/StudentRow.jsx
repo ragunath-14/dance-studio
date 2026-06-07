@@ -1,13 +1,32 @@
 import React, { useMemo, useState } from 'react';
 import { Edit2, Trash2, CheckCircle, AlertCircle, ToggleLeft, ToggleRight, History } from 'lucide-react';
 import Button from '../ui/Button';
-import { isStudentPaid } from '../../utils/feeUtils';
 
 const StudentRow = ({ student, onEdit, onDelete, onToggleStatus, onViewHistory }) => {
   const [toggling, setToggling] = useState(false);
   const isActive = student.isActive !== false; // default true for existing students
 
-  const isPaid = useMemo(() => isStudentPaid(student), [student]);
+  const isPaid = useMemo(() => {
+    const today = new Date();
+    const getMonthlyFee = (student) => student.fee ?? (student.classType === 'Fitness Class' ? 2500 : 3500);
+    
+    const rawJoinDate = student.createdAt || student.joinDate || new Date().toISOString();
+    const joinDate = new Date(rawJoinDate);
+    
+    // Total cycles expected since joining (consistent with PaymentList)
+    let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
+    if (today.getDate() < joinDate.getDate()) {
+      totalCycles--;
+    }
+
+    if (totalCycles <= 0) return true;
+
+    const totalPaid = student.totalPaid || 0;
+    const fee = getMonthlyFee(student);
+    const totalExpected = totalCycles * fee;
+    
+    return totalPaid >= totalExpected;
+  }, [student]);
 
   const handleToggle = async () => {
     setToggling(true);
