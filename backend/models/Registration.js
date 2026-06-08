@@ -12,11 +12,11 @@ const RegistrationSchema = new mongoose.Schema({
   bloodGroup:     { type: String, trim: true },
   classType: {
     type: String,
+    required: [true, 'Class type is required'],
     enum: {
       values: ['Dance Class', 'Fitness Class', 'Regular Class'],
       message: '{VALUE} is not a valid class type'
-    },
-    default: 'Dance Class'
+    }
   },
   danceStyle:     { type: String, trim: true },
   danceForFitness: { type: String, trim: true },
@@ -51,6 +51,15 @@ const RegistrationSchema = new mongoose.Schema({
     index: true
   },
   batchTiming:    { type: String, trim: true },
+  dayType: {
+    type: String,
+    required: [true, 'Schedule type is required'],
+    enum: {
+      values: ['Weekdays', 'Weekend'],
+      message: '{VALUE} is not a valid day type'
+    },
+    trim: true
+  },
   notes:  { type: String, trim: true },
   status: {
     type: String,
@@ -58,6 +67,7 @@ const RegistrationSchema = new mongoose.Schema({
     default: 'pending',
     index: true
   },
+  hiddenInLog: { type: Boolean, default: false, index: true },
   createdAt: { type: Date, default: Date.now, index: true }
 });
 

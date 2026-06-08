@@ -8,6 +8,7 @@ let messageQueue = Promise.resolve();
 // ── Meta error codes that mean "template not usable right now" ───────────────
 // 132001 = template name doesn't exist / still PENDING approval
 // 132000 = template paused / rejected
+// 131047 = re-engagement restriction (24h window closed — template required)
 const TEMPLATE_UNAVAILABLE_CODES = [132001, 132000];
 
 /**
@@ -82,19 +83,27 @@ const sendMessage = async (whatsappNumber, fallbackText, options = {}) => {
         const errMsg  = error.response ? JSON.stringify(error.response.data) : error.message;
 
         if (TEMPLATE_UNAVAILABLE_CODES.includes(errCode) && fallbackText) {
-          // Template still PENDING — fall through to plain-text fallback
+          // Template still PENDING or rejected — fall through to plain-text fallback
           console.warn(
             `⚠️  Template "${options.templateName}" not yet approved (code ${errCode}).` +
             ` Sending plain-text fallback to ${cleanedNumber}...`
           );
         } else {
-          console.error(`❌ Meta API error for ${cleanedNumber}:`, errMsg);
-          return { success: false, reason: errMsg };
+          console.error(`❌ Meta API error for ${cleanedNumber} (template: ${options.templateName}):`, errMsg);
+          // For non-template-missing errors, still try fallback if available
+          if (fallbackText) {
+            console.warn(`  ↳ Attempting plain-text fallback for ${cleanedNumber}...`);
+          } else {
+            return { success: false, reason: errMsg };
+          }
         }
       }
     }
 
     // ── Attempt 2: Plain-text fallback ───────────────────────────────────
+    if (!fallbackText) {
+      return { success: false, reason: 'No template and no fallback text provided.' };
+    }
     try {
       const response = await axios.post(url, buildPayload(false), { headers });
       const msgId = response.data.messages?.[0]?.id;
@@ -112,25 +121,34 @@ const sendMessage = async (whatsappNumber, fallbackText, options = {}) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Public messaging helpers
-//  Each helper provides a rich plain-text fallback so messages still go through
-//  while Meta templates are in PENDING review state.
-//  Once templates are APPROVED, they are used automatically — no code changes needed.
+//  Template names below MUST MATCH the exact approved template names in your
+//  Meta Business Manager (Business > WhatsApp > Message Templates).
+//
+//  Current approved templates (update these if you rename them in Meta):
+//    welcome_student     — sent on enrollment / registration approval
+//    fee_reminder        — sent for pending fee alerts
+//    payment_receipt     — sent on payment confirmation
+//
+//  If a template is pending or unavailable, a plain-text fallback is sent.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Sent when a student is enrolled or a registration is approved.
+ * Template: welcome_student  (3 body params: name, class, timing)
  */
 exports.sendWelcomeMessage = async (whatsappNumber, studentName, classType, batchTiming) => {
-  const name   = studentName || 'Student';
-  const cls    = classType   || 'Dance';
-  const timing = batchTiming || 'TBA';
+  const name   = (studentName || 'Student').trim();
+  const cls    = (classType   || 'Dance').trim();
+  const timing = (batchTiming || 'TBA').trim();
 
   const fallback =
     `Hi ${name}, welcome to Expressionz Dance Studio! ` +
-    `You are enrolled in ${cls} class. Batch timing: ${timing}. We are excited to have you! 💃`;
+    `You are now enrolled in the ${cls} class. Batch timing: ${timing}. We are excited to have you! 💃🎉`;
+
+  console.log(`📤 [WhatsApp] sendWelcomeMessage → ${whatsappNumber} (${name})`);
 
   return sendMessage(whatsappNumber, fallback, {
-    templateName: 'welcome_message',
+    templateName: 'welcome_student',
     languageCode: 'en',
     components  : [{
       type      : 'body',
@@ -145,20 +163,23 @@ exports.sendWelcomeMessage = async (whatsappNumber, studentName, classType, batc
 
 /**
  * Fee due alert — sent by the daily scheduler and manual reminder routes.
+ * Template: fee_reminder  (3 body params: name, amount, months)
  * NOTE: studentId parameter is accepted but intentionally unused here;
  * it is passed by some callers for logging convenience only.
  */
 exports.sendPendingFeesAlert = async (studentId, whatsappNumber, studentName, pendingMonths, totalDue) => {
-  const name   = studentName   || 'Student';
-  const due    = String(totalDue);
-  const months = String(pendingMonths);
+  const name   = (studentName   || 'Student').trim();
+  const due    = String(totalDue || 0);
+  const months = String(pendingMonths || 1);
 
   const fallback =
-    `Hi ${name}, this is a reminder that your fee of Rs.${due} is pending ` +
-    `for ${months} month(s) at Expressionz Dance Studio. Please clear it soon. 🙏`;
+    `Hi ${name}, this is a friendly reminder that your fee of Rs.${due} is pending ` +
+    `for ${months} month(s) at Expressionz Dance Studio. Please clear it at your earliest convenience. 🙏`;
+
+  console.log(`📤 [WhatsApp] sendPendingFeesAlert → ${whatsappNumber} (${name}, ₹${due})`);
 
   return sendMessage(whatsappNumber, fallback, {
-    templateName: 'fee_remainder',
+    templateName: 'fee_reminder',
     languageCode: 'en',
     components  : [{
       type      : 'body',
@@ -173,19 +194,22 @@ exports.sendPendingFeesAlert = async (studentId, whatsappNumber, studentName, pe
 
 /**
  * Payment confirmation — sent immediately after a payment is recorded.
+ * Template: payment_receipt  (4 body params: name, amount, purpose, date)
  */
 exports.sendPaymentConfirmation = async (whatsappNumber, studentName, amount, purpose, date) => {
-  const name          = studentName || 'Student';
+  const name          = (studentName || 'Student').trim();
   const formattedDate = date || new Date().toLocaleDateString('en-IN');
-  const amt           = String(amount);
-  const purp          = purpose || 'Monthly Fee';
+  const amt           = String(amount || 0);
+  const purp          = (purpose || 'Monthly Fee').trim();
 
   const fallback =
-    `Hi ${name}, we received your payment of Rs.${amt} for ${purp} on ${formattedDate} ` +
+    `Hi ${name}, we have received your payment of Rs.${amt} for ${purp} on ${formattedDate} ` +
     `at Expressionz Dance Studio. Thank you! 🎉`;
 
+  console.log(`📤 [WhatsApp] sendPaymentConfirmation → ${whatsappNumber} (${name}, ₹${amt})`);
+
   return sendMessage(whatsappNumber, fallback, {
-    templateName: 'payment_received',
+    templateName: 'payment_receipt',
     languageCode: 'en',
     components  : [{
       type      : 'body',
@@ -206,25 +230,29 @@ exports.sendPaymentReceipt = exports.sendPaymentConfirmation;
 
 /**
  * Sent when a public registration form is submitted (pending approval).
+ * Uses the welcome_student template with "Pending Approval" as timing,
+ * which gives a meaningful confirmation message.
  */
 exports.sendRegistrationConfirmation = async (whatsappNumber, studentName, classType) => {
-  const name = studentName || 'Student';
-  const cls  = classType   || 'Dance';
+  const name = (studentName || 'Student').trim();
+  const cls  = (classType   || 'Dance').trim();
 
   const fallback =
     `Hi ${name}, thank you for registering with Expressionz Dance Studio! ` +
-    `Your request to join the ${cls} class has been received and is pending approval. ` +
+    `Your request to join the ${cls} class has been received and is pending admin approval. ` +
     `We will contact you soon! 🎉`;
 
+  console.log(`📤 [WhatsApp] sendRegistrationConfirmation → ${whatsappNumber} (${name})`);
+
   return sendMessage(whatsappNumber, fallback, {
-    templateName: 'welcome_message',
+    templateName: 'welcome_student',
     languageCode: 'en',
     components  : [{
       type      : 'body',
       parameters: [
-        { type: 'text', text: name },
-        { type: 'text', text: cls  },
-        { type: 'text', text: 'Pending Approval' }
+        { type: 'text', text: name                },
+        { type: 'text', text: cls                 },
+        { type: 'text', text: 'Pending Approval'  }
       ]
     }]
   });
@@ -239,5 +267,6 @@ exports.getStatus = () => ({
               !!process.env.META_ACCESS_TOKEN &&
               !!process.env.META_PHONE_NUMBER_ID,
   apiEnabled: process.env.USE_META_API === 'true',
+  templates : ['welcome_student', 'fee_reminder', 'payment_receipt'],
   dailyLimit: null, // Meta Cloud API manages its own rate limits
 });

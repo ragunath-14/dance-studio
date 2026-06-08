@@ -24,36 +24,50 @@ const Dashboard = () => {
 
   const isLoading = loading || statsLoading;
 
+  // Safely extract metrics with full fallbacks to prevent any crash on undefined
   const metrics = useMemo(() => {
-    if (!stats?.metrics) return {
+    const defaults = {
       total: 0, revenue: 0, lifetime: 0, overdue: 0, pending: 0,
+      totalPayments: 0,
       classTypes: { dance: 0, regular: 0, fitness: 0 }
     };
-    return stats.metrics;
+    if (!stats || !stats.metrics) return defaults;
+    return {
+      ...defaults,
+      ...stats.metrics,
+      // Ensure classTypes always has all keys even if server returns partial data
+      classTypes: {
+        dance: 0, regular: 0, fitness: 0,
+        ...(stats.metrics.classTypes || {})
+      }
+    };
   }, [stats]);
 
-  const overdueStudents = useMemo(() => stats?.overdueStudents || [], [stats]);
+  const overdueStudents = useMemo(() => {
+    if (!stats || !Array.isArray(stats.overdueStudents)) return [];
+    return stats.overdueStudents;
+  }, [stats]);
 
   const recentActivity = useMemo(() => {
-    if (!stats?.recentActivity) return [];
+    if (!stats || !Array.isArray(stats.recentActivity)) return [];
     return stats.recentActivity.map(act => {
       if (act.type === 'payment') {
         return {
           ...act,
           title: act.studentId?.studentName || 'Student',
-          desc: `Paid ₹${act.amount?.toLocaleString()} for ${act.purpose}`,
+          desc: `Paid ₹${(act.amount || 0).toLocaleString()} for ${act.purpose || 'Monthly Fee'}`,
           icon: <CreditCard size={14} />,
           color: '#4CAF50',
-          date: new Date(act.date)
+          date: new Date(act.date || act.createdAt)
         };
       }
       return {
         ...act,
-        title: act.studentName,
-        desc: `New registration for ${act.classType}`,
+        title: act.studentName || 'Student',
+        desc: `New registration for ${act.classType || 'class'}`,
         icon: <UserPlus size={14} />,
         color: '#2196F3',
-        date: new Date(act.date)
+        date: new Date(act.date || act.createdAt)
       };
     });
   }, [stats]);
@@ -79,13 +93,17 @@ const Dashboard = () => {
   };
 
   const relativeTime = (date) => {
-    const diffMs = now - date;
+    if (!date || isNaN(date.getTime())) return '—';
+    const diffMs = now - date.getTime();
     const diffH  = Math.round(diffMs / (1000 * 60 * 60));
     const diffM  = Math.round(diffMs / (1000 * 60));
+    if (diffM < 1) return 'just now';
     if (diffM < 60) return `${diffM}m ago`;
     if (diffH < 24) return `${diffH}h ago`;
     return `${Math.round(diffH / 24)}d ago`;
   };
+
+  const totalStudents = metrics.total || 0;
 
   return (
     <div className="dashboard animate-fade-in">
@@ -119,7 +137,7 @@ const Dashboard = () => {
               <AlertCircle size={18} style={{ color: '#F44336' }} />
               <strong>{overdueStudents.length} student{overdueStudents.length > 1 ? 's' : ''} with overdue fees</strong>
               <span className="overdue-total-badge">
-                ₹{overdueStudents.reduce((s, x) => s + x.totalDue, 0).toLocaleString()} total
+                ₹{overdueStudents.reduce((s, x) => s + (x.totalDue || 0), 0).toLocaleString()} total
               </span>
             </span>
             {overdueOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -146,7 +164,7 @@ const Dashboard = () => {
                       <span className="overdue-months-badge">
                         {student.pendingMonths} month{student.pendingMonths > 1 ? 's' : ''}
                       </span>
-                      <span className="overdue-amount">₹{student.totalDue.toLocaleString()}</span>
+                      <span className="overdue-amount">₹{(student.totalDue || 0).toLocaleString()}</span>
                     </div>
                     <div className="overdue-last-alert">
                       Last notified: {lastAlertDate}
@@ -179,8 +197,11 @@ const Dashboard = () => {
               <Music size={20} className="text-muted" />
             </div>
             <div className="class-pills">
-              <ClassPill label="Dance"   count={metrics.classTypes.dance}   total={metrics.total || 1} className="dance"   />
-              <ClassPill label="Fitness" count={metrics.classTypes.fitness} total={metrics.total || 1} className="fitness" />
+              <ClassPill label="Dance"   count={metrics.classTypes.dance}   total={totalStudents || 1} className="dance"   />
+              <ClassPill label="Fitness" count={metrics.classTypes.fitness} total={totalStudents || 1} className="fitness" />
+              {metrics.classTypes.regular > 0 && (
+                <ClassPill label="Regular" count={metrics.classTypes.regular} total={totalStudents || 1} className="regular" />
+              )}
             </div>
           </div>
         </div>
@@ -192,7 +213,12 @@ const Dashboard = () => {
               <NavLink to="/admin/activity" style={{ fontSize: '13px', color: 'var(--primary-color)', fontWeight: 700, textDecoration: 'none' }}>View All →</NavLink>
             </div>
             <div className="activity-feed">
-              {recentActivity.length > 0 ? (
+              {isLoading ? (
+                <div className="activity-empty">
+                  <div className="activity-empty-icon" style={{ fontSize: '1.5rem' }}>⏳</div>
+                  <p>Loading activity...</p>
+                </div>
+              ) : recentActivity.length > 0 ? (
                 recentActivity.map((act, i) => (
                   <div key={i} className="activity-entry">
                     <div className="activity-icon" style={{ backgroundColor: `${act.color}15`, color: act.color }}>
@@ -229,7 +255,7 @@ const StatCard = ({ label, value, icon, color, trend, loading }) => (
       <div className="stat-content">
         <p className="stat-label">{label}</p>
         <h3 className="stat-value">
-          {loading ? <span className="skeleton-value" /> : value}
+          {loading ? <span className="skeleton-value" /> : (value ?? 0)}
         </h3>
         {trend && <span className="stat-trend" style={{ color }}>{trend}</span>}
       </div>
@@ -241,7 +267,7 @@ const ClassPill = ({ label, count, total, className }) => (
   <div className={`pill ${className}`}>
     <span>{label}</span>
     <div className="pill-bar-wrap">
-      <div className="pill-bar" style={{ width: `${(count / total) * 100}%` }} />
+      <div className="pill-bar" style={{ width: `${Math.round((count / Math.max(total, 1)) * 100)}%` }} />
     </div>
     <strong>{count}</strong>
   </div>

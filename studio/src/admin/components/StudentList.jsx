@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Search, Filter, X } from 'lucide-react';
@@ -27,26 +27,47 @@ const StudentList = () => {
   const [dayType, setDayType]   = useState('');   // '' | 'Weekdays' | 'Weekend'
   const [confirmState, setConfirmState] = useState({ open: false, studentId: null });
 
-  // Server-side fetching when page, tab, or search changes (skipping initial mount duplicate)
+  // Refs to hold latest filter values for use in callbacks without stale closure
+  const filtersRef = React.useRef({ searchTerm: '', activeTab: '', ageGroup: '', dayType: '', limit: 50 });
+  filtersRef.current = { searchTerm, activeTab, ageGroup, dayType, limit };
+
+  // Debounced fetch wrapper
+  const debounceRef = React.useRef(null);
+  const triggerFetch = useCallback((overrides = {}) => {
+    const f = { ...filtersRef.current, ...overrides };
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchStudents(1, f.limit, f.searchTerm, f.activeTab, f.ageGroup, f.dayType);
+    }, 300);
+  }, [fetchStudents]);
+
+  // Track first mount to skip initial fetch (DataContext already handles it)
   const isInitialMount = React.useRef(true);
   React.useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
+      return;
     }
-    const timer = setTimeout(() => {
-      fetchStudents(1, limit, searchTerm, activeTab, ageGroup, dayType);
-    }, 300);
-    return () => clearTimeout(timer);
+    triggerFetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, activeTab, limit, ageGroup, dayType]);
+  }, [searchTerm, activeTab, ageGroup, dayType, limit]);
 
   const onPageChange = (page) => {
-    fetchStudents(page, limit, searchTerm, activeTab, ageGroup, dayType);
+    const f = filtersRef.current;
+    fetchStudents(page, f.limit, f.searchTerm, f.activeTab, f.ageGroup, f.dayType);
   };
 
   const onLimitChange = (newLimit) => {
     setLimit(newLimit);
-    fetchStudents(1, newLimit, searchTerm, activeTab, ageGroup, dayType);
+    const f = filtersRef.current;
+    fetchStudents(1, newLimit, f.searchTerm, f.activeTab, f.ageGroup, f.dayType);
+  };
+
+  const clearAllFilters = () => {
+    setAgeGroup('');
+    setDayType('');
+    setSearchTerm('');
+    setActiveTab('');
   };
 
   const [formData, setFormData] = useState({
@@ -56,7 +77,8 @@ const StudentList = () => {
     emergencyContactName: '', emergencyContactPhone: '', 
     location: '', address: '', batchTiming: '', notes: '',
     fee: 0,
-    classType: 'Dance Class', 
+    classType: 'Dance Class',
+    dayType: 'Weekdays',
     createdAt: new Date().toISOString().split('T')[0]
   });
 
@@ -105,6 +127,7 @@ const StudentList = () => {
       batchTiming: student.batchTiming || '',
       notes: student.notes || '',
       classType: student.classType || 'Dance Class',
+      dayType: student.dayType || 'Weekdays',
       createdAt: student.createdAt || student.joinDate || new Date().toISOString().split('T')[0]
     });
     setShowModal(true);
@@ -119,12 +142,13 @@ const StudentList = () => {
       studentAge: '', gender: '', bloodGroup: '', parentName: '', 
       emergencyContactName: '', emergencyContactPhone: '', 
       location: '', address: '', batchTiming: '', notes: '',
-      classType: 'Dance Class', 
+      classType: 'Dance Class',
+      dayType: 'Weekdays',
       createdAt: new Date().toISOString().split('T')[0] 
     });
   };
 
-
+  const hasActiveFilters = !!(ageGroup || dayType || searchTerm || activeTab);
 
   return (
     <div className="student-list animate-fade-in">
@@ -134,7 +158,7 @@ const StudentList = () => {
             <Search size={18} />
             <input 
               type="text" 
-              placeholder={`Search ${activeTab.split(' ')[0]} students...`} 
+              placeholder={`Search students...`} 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -185,10 +209,10 @@ const StudentList = () => {
             </select>
 
             {/* Active filter chips */}
-            {(ageGroup || dayType) && (
+            {hasActiveFilters && (
               <button
                 className="filter-clear-btn"
-                onClick={() => { setAgeGroup(''); setDayType(''); }}
+                onClick={clearAllFilters}
                 title="Clear all filters"
               >
                 <X size={13} /> Clear
@@ -197,7 +221,7 @@ const StudentList = () => {
           </div>
         </div>
         <Button onClick={() => { 
-          setFormData(prev => ({ ...prev, classType: activeTab }));
+          setFormData(prev => ({ ...prev, classType: activeTab || 'Dance Class' }));
           setShowModal(true); 
           setEditingStudent(null); 
         }} icon={Plus}>
@@ -234,7 +258,11 @@ const StudentList = () => {
             ) : (
               <tr>
                 <td colSpan="2" className="text-center">
-                  {studentsLoading ? 'Refreshing...' : `No students found in ${activeTab}`}
+                  {studentsLoading ? 'Refreshing...' : (
+                    hasActiveFilters
+                      ? `No students found matching current filters.`
+                      : `No students found.`
+                  )}
                 </td>
               </tr>
             )}
@@ -281,6 +309,7 @@ const StudentList = () => {
           student={historyStudent}
           onClose={() => setHistoryStudent(null)}
           onRecordPayment={(student) => {
+            setHistoryStudent(null);
             navigate('/admin/payments', { state: { payStudentId: student._id } });
           }}
         />

@@ -3,7 +3,12 @@ const Student  = require('../models/Student');
 const whatsapp = require('../services/whatsappService');
 
 // ─── Fee helper ──────────────────────────────────────────────────────────────
-const getMonthlyFee = (classType) => classType === 'Fitness Class' ? 2500 : 3500;
+// Uses age-based fee to stay consistent with studentController.js and scheduler.js.
+// Kids (age ≤ 9) → ₹1500 | Adults (age > 9 or unknown) → ₹2500
+const getMonthlyFee = (student) => {
+  const ageNum = parseInt(student.studentAge, 10);
+  return !isNaN(ageNum) && ageNum <= 9 ? 1500 : 2500;
+};
 
 // ─── GET /api/payments ───────────────────────────────────────────────────────
 // ─── GET /api/payments (Paginated) ──────────────────────────────────────────
@@ -13,14 +18,19 @@ exports.getAllPayments = async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
 
+    const query = {};
+    if (req.query.excludeHidden === 'true') {
+      query.hiddenInLog = { $ne: true };
+    }
+
     const [payments, total] = await Promise.all([
-      Payment.find()
+      Payment.find(query)
         .populate('studentId', 'studentName')
         .sort({ date: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      Payment.countDocuments()
+      Payment.countDocuments(query)
     ]);
 
     res.json({
@@ -173,7 +183,7 @@ exports.sendPendingAlerts = async (req, res) => {
   try {
     const today = new Date();
     const [students, monthlyFeePaidMap] = await Promise.all([
-      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType isActive createdAt lastAlertSent').lean(),
+      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType studentAge isActive createdAt lastAlertSent').lean(),
       Payment.aggregate([
         { $match: { purpose: 'Monthly Fee' } },
         { $group: { _id: '$studentId', totalPaid: { $sum: '$amount' } } }
@@ -194,7 +204,7 @@ exports.sendPendingAlerts = async (req, res) => {
       if (today.getDate() < joinDate.getDate()) totalCycles--;
       if (totalCycles <= 0) continue;   // Joined this month — no dues yet
 
-      const fee          = getMonthlyFee(student.classType);
+      const fee          = getMonthlyFee(student);
       const totalPaid    = paidByStudent.get(student._id.toString()) || 0;
       const totalDue     = Math.max(0, totalCycles * fee - totalPaid);
       if (totalDue <= 0) continue;
@@ -269,7 +279,7 @@ exports.sendStudentReminder = async (req, res) => {
       return res.json({ success: false, message: 'No dues yet — student joined this month.' });
     }
 
-    const fee           = getMonthlyFee(student.classType);
+    const fee           = getMonthlyFee(student);
     const totalDue      = Math.max(0, totalCycles * fee - totalPaid);
     const pendingMonths = Math.ceil(totalDue / fee);
 
@@ -305,6 +315,41 @@ exports.sendStudentReminder = async (req, res) => {
     });
   } catch (err) {
     console.error('sendStudentReminder error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─── PUT /api/payments/:id/hide-log ──────────────────────────────────────────
+exports.hidePaymentLog = async (req, res) => {
+  try {
+    const payment = await Payment.findByIdAndUpdate(
+      req.params.id,
+      { hiddenInLog: true },
+      { new: true }
+    );
+    if (!payment) return res.status(404).json({ success: false, message: 'Payment record not found.' });
+
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'payment', action: 'hide' });
+
+    res.json({ success: true, message: 'Payment hidden from log.' });
+  } catch (err) {
+    console.error('hidePaymentLog error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─── POST /api/payments/hide-all-logs ────────────────────────────────────────
+exports.hideAllPaymentLogs = async (req, res) => {
+  try {
+    await Payment.updateMany({}, { hiddenInLog: true });
+
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'payment', action: 'hideAll' });
+
+    res.json({ success: true, message: 'All payments hidden from log.' });
+  } catch (err) {
+    console.error('hideAllPaymentLogs error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 };

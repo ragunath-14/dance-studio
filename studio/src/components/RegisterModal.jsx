@@ -14,6 +14,7 @@ const RegisterModal = ({ showModal, setShowModal }) => {
     gender: '',
     classType: '',
     batchTiming: '',
+    dayType: '',
     // these are hidden to avoid breaking API
     parentName: '',
     location: '',
@@ -92,7 +93,8 @@ const RegisterModal = ({ showModal, setShowModal }) => {
         setFormData({
           studentName: '', studentAge: '', classType: '', danceStyle: '',
           danceForFitness: '', whatsappSame: true, whatsappNumber: '',
-          parentName: '', phone: '', location: '', notes: '', gender: '', batchTiming: ''
+          parentName: '', phone: '', location: '', notes: '', gender: '', batchTiming: '',
+          dayType: ''
         });
         setFieldErrors({});
         setTimeout(() => { setShowModal(false); setStatus({ type: '', message: '' }); }, 3000);
@@ -216,13 +218,13 @@ const RegisterModal = ({ showModal, setShowModal }) => {
             </div>
             
             <div className="reg-field">
-              <label>DANCE CLASS <span>*</span></label>
+              <label>CLASS TYPE <span>*</span></label>
               <div className="reg-class-options">
                 <div 
-                  className={`reg-class-card ${formData.classType === 'Regular Class' ? 'selected' : ''}`}
-                  onClick={() => { setFormData(p => ({ ...p, classType: 'Regular Class' })); setFieldErrors(p => ({...p, classType: ''})) }}
+                  className={`reg-class-card ${formData.classType === 'Dance Class' ? 'selected' : ''}`}
+                  onClick={() => { setFormData(p => ({ ...p, classType: 'Dance Class' })); setFieldErrors(p => ({...p, classType: ''})) }}
                 >
-                  Regular Class
+                  Dance Class
                 </div>
                 <div 
                   className={`reg-class-card ${formData.classType === 'Fitness Class' ? 'selected' : ''}`}
@@ -239,13 +241,13 @@ const RegisterModal = ({ showModal, setShowModal }) => {
               <div className="reg-class-options">
                 <div 
                   className={`reg-class-card ${formData.batchTiming === 'Weekdays Class' ? 'selected' : ''}`}
-                  onClick={() => { setFormData(p => ({ ...p, batchTiming: 'Weekdays Class' })); setFieldErrors(p => ({...p, batchTiming: ''})) }}
+                  onClick={() => { setFormData(p => ({ ...p, batchTiming: 'Weekdays Class', dayType: 'Weekdays' })); setFieldErrors(p => ({...p, batchTiming: ''})) }}
                 >
                   Weekdays Class
                 </div>
                 <div 
                   className={`reg-class-card ${formData.batchTiming === 'Weekend Class' ? 'selected' : ''}`}
-                  onClick={() => { setFormData(p => ({ ...p, batchTiming: 'Weekend Class' })); setFieldErrors(p => ({...p, batchTiming: ''})) }}
+                  onClick={() => { setFormData(p => ({ ...p, batchTiming: 'Weekend Class', dayType: 'Weekend' })); setFieldErrors(p => ({...p, batchTiming: ''})) }}
                 >
                   Weekend Class
                 </div>

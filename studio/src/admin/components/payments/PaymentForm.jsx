@@ -50,13 +50,18 @@ const PaymentForm = ({ formData, setFormData, students = [], payments = [], curr
   const duesInfo = useMemo(() => {
     if (!selectedStudent) return null;
     const today = new Date();
-    const getMonthlyFee = (ct) => ct === 'Fitness Class' ? 2500 : 3500;
+    // Age-based fee: Kids (≤9) → ₹1500, Adults (>9) → ₹2500 — matches backend exactly
+    const getMonthlyFee = (s) => {
+      const age = parseInt(s?.studentAge, 10);
+      if (s?.fee && s.fee > 0) return s.fee;
+      return !isNaN(age) && age <= 9 ? 1500 : 2500;
+    };
     const joinDate = new Date(selectedStudent.createdAt || selectedStudent.joinDate || today);
     let totalCycles = (today.getFullYear() - joinDate.getFullYear()) * 12 + (today.getMonth() - joinDate.getMonth()) + 1;
     if (today.getDate() < joinDate.getDate()) totalCycles--;
     if (totalCycles <= 0) totalCycles = 0;
 
-    const fee = getMonthlyFee(selectedStudent.classType);
+    const fee = getMonthlyFee(selectedStudent);
 
     // Prefer server-side totalPaid (already aggregated from full payment history)
     // Fall back to filtering the paginated payments prop (less accurate but better than nothing)

@@ -3,7 +3,12 @@ const Student   = require('./models/Student');
 const Payment   = require('./models/Payment');
 const whatsapp  = require('./services/whatsappService');
 
-const getMonthlyFee = (classType) => classType === 'Fitness Class' ? 2500 : 3500;
+// Uses age-based fee consistent with studentController.js and paymentController.js
+// Kids (age ≤ 9) → ₹1500 | Adults (age > 9 or unknown) → ₹2500
+const getMonthlyFee = (student) => {
+  const ageNum = parseInt(student.studentAge, 10);
+  return !isNaN(ageNum) && ageNum <= 9 ? 1500 : 2500;
+};
 
 /**
  * Core logic: find students with outstanding dues and fire WhatsApp reminders.
@@ -58,7 +63,7 @@ async function runPendingFeeAlerts() {
       if (today.getDate() < joinDay) totalCycles--;
       if (totalCycles <= 0) continue; // Joined this month or future date — no dues yet
 
-      const fee           = getMonthlyFee(student.classType);
+      const fee           = getMonthlyFee(student);
       const totalPaid     = paymentsByStudent.get(student._id.toString()) || 0;
       const totalDue      = Math.max(0, (totalCycles * fee) - totalPaid);
 

@@ -15,7 +15,8 @@ const PaymentSchema = new mongoose.Schema({
   date:          { type: Date, default: Date.now, index: true },
   method:        { type: String, trim: true },
   purpose:       { type: String, trim: true },
-  remainingFees: { type: Number, default: 0, min: 0 }
+  remainingFees: { type: Number, default: 0, min: 0 },
+  hiddenInLog:   { type: Boolean, default: false, index: true }
 });
 
 // Compound index: speeds up "total paid per student for Monthly Fee" queries

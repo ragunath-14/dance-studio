@@ -42,7 +42,7 @@ export const DataProvider = ({ children, isAuthenticated }) => {
   }, []);
 
   // Granular loading flags
-  const [loading,         setLoading]         = useState(true);   // global loading
+  const [loading,         setLoading]         = useState(true);   // global loading (initial only)
   const [statsLoading,    setStatsLoading]     = useState(true);
   const [studentsLoading, setStudentsLoading]  = useState(false);
   const [paymentsLoading, setPaymentsLoading]  = useState(false);
@@ -76,8 +76,13 @@ export const DataProvider = ({ children, isAuthenticated }) => {
     }
   }, []);
 
-  const fetchStudents = useCallback(async (page = 1, limit = 50, search = '', classType = '', ageGroup = '', dayType = '') => {
+  // silent=true means we DON'T clear data before fetching (prevents flash)
+  const fetchStudents = useCallback(async (page = 1, limit = 50, search = '', classType = '', ageGroup = '', dayType = '', silent = false) => {
     setStudentsLoading(true);
+    // Only clear data on explicit filter changes (non-silent), to prevent stale rows flashing
+    if (!silent) {
+      setStudents(prev => ({ ...prev, data: [] }));
+    }
     try {
       studentParamsRef.current = { page, limit, search, classType, ageGroup, dayType };
       const res = await axios.get(`${API_URL}/students`, { params: { page, limit, search, classType, ageGroup, dayType } });
@@ -122,6 +127,7 @@ export const DataProvider = ({ children, isAuthenticated }) => {
   }, []);
 
   // ── Full data refresh (initial or after mutations) ─────────────────────────
+  // silent=true: don't set global loading (prevents full-page blank flash after edits)
   const fetchAllData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
@@ -131,7 +137,8 @@ export const DataProvider = ({ children, isAuthenticated }) => {
       await Promise.all([
         fetchStats(),
         fetchAllStudents(),
-        fetchStudents(sp.page, sp.limit, sp.search, sp.classType, sp.ageGroup, sp.dayType),
+        // Pass silent=true so student list doesn't blank out on background refreshes
+        fetchStudents(sp.page, sp.limit, sp.search, sp.classType, sp.ageGroup, sp.dayType, silent),
         fetchPayments(pp.page, pp.limit),
         fetchUnpaidStudents(up.page, up.limit),
         fetchRegistrations(),
@@ -165,6 +172,7 @@ export const DataProvider = ({ children, isAuthenticated }) => {
     // Handle incoming real-time socket events with debouncing to prevent twinkling/flickering
     socket.on('dataChanged', (payload) => {
       console.log('⚡ Real-time data changed event:', payload);
+      // Always silent=true for socket events (never blank the page on real-time updates)
       debouncedRefresh(true);
 
       if (payload && payload.type === 'registration') {
@@ -190,7 +198,8 @@ export const DataProvider = ({ children, isAuthenticated }) => {
   }, [isAuthenticated, fetchAllData, debouncedRefresh, showToast]);
 
   // ── Action helpers ─────────────────────────────────────────────────────────
-  const refreshData = useCallback(() => debouncedRefresh(false), [debouncedRefresh]);
+  // refreshData is silent by default (no full-page blank) — used after CRUD mutations
+  const refreshData = useCallback(() => debouncedRefresh(true), [debouncedRefresh]);
 
   const approveRegistration = async (id) => {
     try {
@@ -215,6 +224,12 @@ export const DataProvider = ({ children, isAuthenticated }) => {
   const toggleStudentStatus = async (id) => {
     try {
       const res = await axios.patch(`${API_URL}/students/${id}/toggle-status`);
+      // Optimistic update: update in-place so list doesn't flicker
+      setStudents(prev => ({
+        ...prev,
+        data: prev.data.map(s => s._id === id ? { ...s, isActive: res.data.student?.isActive } : s)
+      }));
+      setAllStudents(prev => prev.map(s => s._id === id ? { ...s, isActive: res.data.student?.isActive } : s));
       debouncedRefresh(true);
       return { success: true, message: res.data.message };
     } catch (err) {
@@ -236,6 +251,7 @@ export const DataProvider = ({ children, isAuthenticated }) => {
       paymentsLoading,
       refreshData,
       fetchStudents,
+      fetchAllStudents,
       fetchPayments,
       fetchUnpaidStudents,
       approveRegistration,

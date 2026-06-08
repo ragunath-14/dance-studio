@@ -230,7 +230,9 @@ async function runAPITests() {
   try {
     await axios.post(`${ADMIN_API.replace(':5001', ':5001')}/register`, {
       studentName: '',
-      phone: '9999999999'
+      phone: '9999999999',
+      classType: 'Regular Class',
+      dayType: 'Weekdays'
     });
     assert(false, 'POST /register with empty name should fail');
   } catch (err) {
@@ -241,7 +243,9 @@ async function runAPITests() {
   try {
     await axios.post(`${ADMIN_API.replace(':5001', ':5001')}/register`, {
       studentName: 'Test Student',
-      phone: ''
+      phone: '',
+      classType: 'Regular Class',
+      dayType: 'Weekdays'
     });
     assert(false, 'POST /register with empty phone should fail');
   } catch (err) {
@@ -352,7 +356,8 @@ async function runStudioAPITests() {
     const res = await axios.post(`${STUDIO_API}/register`, {
       studentName: 'Unit Test Student',
       phone: uniquePhone,
-      classType: 'Regular Class'
+      classType: 'Regular Class',
+      dayType: 'Weekdays'
     });
     assert(res.status === 201, 'POST /register creates successfully');
     assert(res.data.success === true, 'Registration success flag is true');
@@ -365,7 +370,8 @@ async function runStudioAPITests() {
     await axios.post(`${STUDIO_API}/register`, {
       studentName: 'Unit Test Student',
       phone: uniquePhone,
-      classType: 'Regular Class'
+      classType: 'Regular Class',
+      dayType: 'Weekdays'
     });
     assert(false, 'Duplicate phone registration should fail');
   } catch (err) {
@@ -377,7 +383,8 @@ async function runStudioAPITests() {
     await axios.post(`${STUDIO_API}/register`, {
       studentName: 'Bad Class Student',
       phone: '1234567890',
-      classType: 'Invalid Class'
+      classType: 'Invalid Class',
+      dayType: 'Weekdays'
     });
     assert(false, 'Invalid classType should fail validation');
   } catch (err) {

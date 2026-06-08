@@ -36,11 +36,11 @@ const StudentSchema = new mongoose.Schema({
   danceForFitness: { type: String, trim: true },
   classType: {
     type: String,
+    required: [true, 'Class type is required'],
     enum: {
       values: ['Dance Class', 'Fitness Class', 'Regular Class'],
       message: '{VALUE} is not a valid class type'
-    },
-    default: 'Dance Class'
+    }
   },
   studentAge: { type: String, trim: true },
   fee: { type: Number, default: 0 },
@@ -54,13 +54,26 @@ const StudentSchema = new mongoose.Schema({
   batchTiming: { type: String, trim: true },
   dayType: {
     type: String,
-    enum: { values: ['Weekdays', 'Weekend', ''], message: '{VALUE} is not a valid day type' },
+    required: [true, 'Schedule type (Weekdays/Weekend) is required'],
+    enum: { values: ['Weekdays', 'Weekend'], message: '{VALUE} is not a valid day type' },
     trim: true
   },
   notes: { type: String, trim: true },
   isActive: { type: Boolean, default: true, index: true },
   lastAlertSent: { type: Date },
   createdAt: { type: Date, default: Date.now, index: true }
+});
+
+// ── Auto-calculate fee from age on every save ─────────────────────────────────
+// Kids (studentAge ≤ 9): ₹1500 | Adults (studentAge > 9 or not provided): ₹2500
+StudentSchema.pre('save', function (next) {
+  const ageNum = parseInt(this.studentAge, 10);
+  if (!isNaN(ageNum)) {
+    this.fee = ageNum <= 9 ? 1500 : 2500;
+  } else if (!this.fee || this.fee === 0) {
+    this.fee = 2500; // default to adult fee if no age given
+  }
+  next();
 });
 
 // Explicitly use 'students' collection to share data with registration backend

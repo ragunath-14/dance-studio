@@ -5,13 +5,17 @@ const whatsapp     = require('../services/whatsappService');
 // ─── POST /api/register  (public registration form) ─────────────────────────
 exports.createPendingRegistration = async (req, res) => {
   try {
-    const { studentName, phone } = req.body;
+    const { studentName, phone, classType, dayType } = req.body;
 
     // Explicit validation for best error messages
     if (!studentName?.trim())
       return res.status(400).json({ success: false, message: 'Student name is required.', field: 'studentName' });
     if (!phone?.trim())
       return res.status(400).json({ success: false, message: 'Phone number is required.', field: 'phone' });
+    if (!classType?.trim())
+      return res.status(400).json({ success: false, message: 'Class type is required.', field: 'classType' });
+    if (!dayType?.trim())
+      return res.status(400).json({ success: false, message: 'Schedule type is required.', field: 'dayType' });
 
     // Reject if a pending registration already exists for this exact phone AND name
     const pendingDuplicate = await Registration.findOne({ 
@@ -23,6 +27,18 @@ exports.createPendingRegistration = async (req, res) => {
       return res.status(409).json({
         success: false,
         message: 'A registration with this name and phone number is already pending approval.',
+        field: 'phone'
+      });
+
+    // Also reject if student is already enrolled (approved and in the students collection)
+    const alreadyEnrolled = await Student.findOne({
+      phone: phone.trim(),
+      studentName: studentName.trim()
+    });
+    if (alreadyEnrolled)
+      return res.status(409).json({
+        success: false,
+        message: 'You are already enrolled at Expressionz Dance Studio. Please contact us if you need help.',
         field: 'phone'
       });
 
@@ -68,6 +84,9 @@ exports.createPendingRegistration = async (req, res) => {
 exports.getAllRegistrations = async (req, res) => {
   try {
     const query = req.query.status ? { status: req.query.status } : {};
+    if (req.query.excludeHidden === 'true') {
+      query.hiddenInLog = { $ne: true };
+    }
     const registrations = await Registration.find(query).sort({ createdAt: -1 }).lean();
     res.json(registrations);
   } catch (err) {
@@ -120,10 +139,12 @@ exports.approveRegistration = async (req, res) => {
       location:       registration.location,
       address:        registration.address,
       batchTiming:    registration.batchTiming,
+      dayType:        registration.dayType,
       email:          registration.email,
       phone:          registration.phone,
       notes:          registration.notes,
       createdAt:      registration.createdAt
+      // fee is auto-calculated by Student model pre-save hook based on studentAge
     });
     await student.save();
 
@@ -171,5 +192,58 @@ exports.rejectRegistration = async (req, res) => {
       return res.status(400).json({ message: 'Invalid registration ID format.' });
     console.error('rejectRegistration error:', err);
     res.status(500).json({ message: err.message });
+  }
+};
+
+// ─── DELETE /api/registrations/:id ───────────────────────────────────────────
+exports.deleteRegistration = async (req, res) => {
+  try {
+    const registration = await Registration.findByIdAndDelete(req.params.id);
+    if (!registration) return res.status(404).json({ success: false, message: 'Registration not found.' });
+
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'registration', action: 'delete' });
+
+    res.json({ success: true, message: 'Registration deleted successfully.' });
+  } catch (err) {
+    console.error('deleteRegistration error:', err);
+    if (err.name === 'CastError')
+      return res.status(400).json({ message: 'Invalid registration ID format.' });
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─── PUT /api/registrations/:id/hide-log ─────────────────────────────────────
+exports.hideRegistrationLog = async (req, res) => {
+  try {
+    const registration = await Registration.findByIdAndUpdate(
+      req.params.id,
+      { hiddenInLog: true },
+      { new: true }
+    );
+    if (!registration) return res.status(404).json({ success: false, message: 'Registration not found.' });
+
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'registration', action: 'hide' });
+
+    res.json({ success: true, message: 'Registration hidden from log.' });
+  } catch (err) {
+    console.error('hideRegistrationLog error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─── POST /api/registrations/hide-all-logs ───────────────────────────────────
+exports.hideAllRegistrationLogs = async (req, res) => {
+  try {
+    await Registration.updateMany({}, { hiddenInLog: true });
+
+    const io = req.app.get('socketio');
+    if (io) io.emit('dataChanged', { type: 'registration', action: 'hideAll' });
+
+    res.json({ success: true, message: 'All registrations hidden from log.' });
+  } catch (err) {
+    console.error('hideAllRegistrationLogs error:', err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

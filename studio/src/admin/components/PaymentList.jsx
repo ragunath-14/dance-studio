@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Search, Check, Bell, History, Send } from 'lucide-react';
@@ -39,17 +39,22 @@ const PaymentList = () => {
   const [reminderState,         setReminderState]         = useState({});
 
   // ── Pagination ─────────────────────────────────────────────────────────────
+  // Use useCallback to avoid stale closures — always read current activeTab from param
+  const fetchPage = useCallback((tab, page, pageLimit) => {
+    if (tab === 'paid') fetchPayments(page, pageLimit);
+    else fetchUnpaidStudents(page, pageLimit);
+  }, [fetchPayments, fetchUnpaidStudents]);
+
   const onPageChange = (page) => {
-    if (activeTab === 'paid') fetchPayments(page, limit);
-    else fetchUnpaidStudents(page, limit);
+    fetchPage(activeTab, page, limit);
   };
 
   const onLimitChange = (newLimit) => {
     setLimit(newLimit);
-    if (activeTab === 'paid') fetchPayments(1, newLimit);
-    else fetchUnpaidStudents(1, newLimit);
+    fetchPage(activeTab, 1, newLimit);
   };
 
+  // Group paid payments by student for the "Paid" tab view
   const paginatedPayments = React.useMemo(() => {
     const rawPayments = payments.data || [];
     const grouped = {};
@@ -97,19 +102,18 @@ const PaymentList = () => {
         window.history.replaceState({}, document.title);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, allStudents]);
 
+  // When tab changes, fetch the correct data immediately (not just on search change)
   React.useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-    onPageChange(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, activeTab]);
-
-  React.useEffect(() => {
+    fetchPage(activeTab, 1, limit);
     setAlertState({ loading: false, message: '', type: '', results: [] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // ── Bulk alert ─────────────────────────────────────────────────────────────
@@ -144,18 +148,19 @@ const PaymentList = () => {
     try {
       if (isEditing) await axios.put(`${API_URL}/payments/${editingId}`, formData);
       else           await axios.post(`${API_URL}/payments`, formData);
+      closeModals();
+      // Refresh silently — no flash
       await refreshData();
       setActiveTab('paid');
-      closeModals();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to save payment.');
     }
   };
 
   const handlePay = (student) => {
-    setCurrentDebt(student.totalDue);
+    setCurrentDebt(student.totalDue || 0);
     setFormData({
-      studentId: student._id, amount: student.totalDue, method: 'Cash',
+      studentId: student._id, amount: student.totalDue || '', method: 'Cash',
       purpose: 'Monthly Fee', date: new Date().toISOString().split('T')[0], remainingFees: 0
     });
     setIsEditing(false);
@@ -166,7 +171,7 @@ const PaymentList = () => {
     try {
       await axios.post(`${API_URL}/payments`, {
         studentId: student._id,
-        amount:    student.totalDue || (student.classType === 'Fitness Class' ? 2500 : 3500),
+        amount:    student.totalDue || student.fee || 2500,
         method: 'Cash', purpose: 'Monthly Fee', remainingFees: 0,
         date: new Date().toISOString()
       });
@@ -212,6 +217,13 @@ const PaymentList = () => {
     setFormData({ studentId: '', amount: '', method: 'Cash', purpose: 'Monthly Fee', date: new Date().toISOString().split('T')[0], remainingFees: 0 });
   };
 
+  // View student history from paid tab — look up in allStudents
+  const viewHistoryFromPayment = (payment) => {
+    const paymentStudentId = String(payment.studentId?._id || payment.studentId || '');
+    const s = allStudents.find(st => String(st._id) === paymentStudentId);
+    if (s) setHistoryStudent(s);
+  };
+
   const isTableLoading = loading || paymentsLoading;
 
   return (
@@ -229,10 +241,16 @@ const PaymentList = () => {
             />
           </div>
           <div className="tabs">
-            <button className={`tab-btn ${activeTab === 'paid' ? 'active' : ''}`} onClick={() => setActiveTab('paid')}>
+            <button
+              className={`tab-btn ${activeTab === 'paid' ? 'active' : ''}`}
+              onClick={() => setActiveTab('paid')}
+            >
               Paid ({stats?.metrics?.totalPayments || payments.total || 0})
             </button>
-            <button className={`tab-btn ${activeTab === 'unpaid' ? 'active' : ''}`} onClick={() => setActiveTab('unpaid')}>
+            <button
+              className={`tab-btn ${activeTab === 'unpaid' ? 'active' : ''}`}
+              onClick={() => setActiveTab('unpaid')}
+            >
               Unpaid ({stats?.metrics?.overdue || serverUnpaid.total || 0})
             </button>
           </div>
@@ -249,7 +267,7 @@ const PaymentList = () => {
               {alertState.loading ? 'Sending...' : '🔔 Run Alerts Now'}
             </Button>
           )}
-          <Button onClick={() => setShowModal(true)} icon={Plus}>
+          <Button onClick={() => { setIsEditing(false); setShowModal(true); }} icon={Plus}>
             Record Payment
           </Button>
         </div>
@@ -314,11 +332,7 @@ const PaymentList = () => {
                     payment={payment}
                     onDelete={handleDelete}
                     onEdit={handleEdit}
-                    onViewHistory={() => {
-                  const paymentStudentId = String(payment.studentId?._id || payment.studentId || '');
-                      const s = allStudents.find(st => String(st._id) === paymentStudentId);
-                      if (s) setHistoryStudent(s);
-                    }}
+                    onViewHistory={() => viewHistoryFromPayment(payment)}
                   />
                 ))
               ) : (
@@ -331,7 +345,12 @@ const PaymentList = () => {
                   return (
                     <tr key={student._id}>
                       <td>
-                        <button className="student-name-link" onClick={() => setHistoryStudent(student)}>
+                        {/* Clickable student name → shows payment history modal */}
+                        <button
+                          className="student-name-link"
+                          onClick={() => setHistoryStudent(student)}
+                          title="Click to view payment history"
+                        >
                           {student.studentName || student.name}
                         </button>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -347,7 +366,7 @@ const PaymentList = () => {
                         )}
                       </td>
                       <td><span className="pending-badge">{student.pendingMonths} month{student.pendingMonths > 1 ? 's' : ''}</span></td>
-                      <td className="amount due">₹{student.totalDue.toLocaleString()}</td>
+                      <td className="amount due">₹{(student.totalDue || 0).toLocaleString()}</td>
                       <td>
                         <div className="action-buttons">
                           {student.isActive === false ? (
@@ -428,10 +447,14 @@ const PaymentList = () => {
         onCancel={() => setConfirmAlerts(false)}
       />
 
+      {/* Payment History Modal — shown when student name is clicked */}
       <PaymentHistoryModal
         student={historyStudent}
         onClose={() => setHistoryStudent(null)}
-        onRecordPayment={handlePay}
+        onRecordPayment={(student) => {
+          setHistoryStudent(null);
+          handlePay(student);
+        }}
       />
     </div>
   );

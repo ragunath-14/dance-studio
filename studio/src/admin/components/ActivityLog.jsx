@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { CreditCard, UserPlus, Clock, RefreshCcw, Activity } from 'lucide-react';
+import { CreditCard, UserPlus, Clock, RefreshCcw, Activity, Trash2 } from 'lucide-react';
 import API_URL from '../config';
 import Pagination from './ui/Pagination';
 import './ActivityLog.css';
@@ -21,14 +21,45 @@ const ActivityLog = () => {
     setLoading(true);
     try {
       const [payRes, regRes] = await Promise.all([
-        axios.get(`${API_URL}/payments`, { params: { limit: 500 } }),
-        axios.get(`${API_URL}/registrations`)
+        axios.get(`${API_URL}/payments`, { params: { limit: 500, excludeHidden: true } }),
+        axios.get(`${API_URL}/registrations`, { params: { excludeHidden: true } })
       ]);
       setPayments(payRes.data.data || payRes.data || []);
       setRegistrations(regRes.data || []);
     } catch (err) {
       console.error('ActivityLog fetch error:', err);
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveLogItem = async (type, id) => {
+    if (!window.confirm("Are you sure you want to remove this log entry?")) return;
+    try {
+      if (type === 'payment') {
+        await axios.put(`${API_URL}/payments/${id}/hide-log`);
+      } else {
+        await axios.put(`${API_URL}/registrations/${id}/hide-log`);
+      }
+      fetchActivity();
+    } catch (err) {
+      console.error('Remove log item error:', err);
+      alert('Failed to remove log item.');
+    }
+  };
+
+  const handleClearAllLogs = async () => {
+    if (!window.confirm("Are you sure you want to clear all active logs? This will hide all current entries from this log view. (Underlying data will be kept for financial/registration calculations)")) return;
+    try {
+      setLoading(true);
+      await Promise.all([
+        axios.post(`${API_URL}/payments/hide-all-logs`),
+        axios.post(`${API_URL}/registrations/hide-all-logs`)
+      ]);
+      fetchActivity();
+    } catch (err) {
+      console.error('Clear all logs error:', err);
+      alert('Failed to clear logs.');
       setLoading(false);
     }
   };
@@ -101,6 +132,29 @@ const ActivityLog = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button 
+            onClick={handleClearAllLogs} 
+            disabled={loading || allActivities.length === 0}
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              color: '#f87171',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '10px',
+              padding: '8px 14px',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s',
+              opacity: (loading || allActivities.length === 0) ? 0.5 : 1
+            }}
+            onMouseEnter={e => { if (!loading && allActivities.length > 0) { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = '#fff'; } }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#f87171'; }}
+          >
+            <Trash2 size={14} /> Clear Logs
+          </button>
           <div className="activity-filter-tabs">
             <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => { setFilter('all'); setPage(1); }}>All</button>
             <button className={`filter-btn ${filter === 'payment' ? 'active' : ''}`} onClick={() => { setFilter('payment'); setPage(1); }}>Payments</button>
@@ -129,15 +183,36 @@ const ActivityLog = () => {
                     <p>{act.desc}</p>
                   </div>
                 </div>
-                <div className="timeline-meta">
-                  <span className="timeline-time">
-                    <Clock size={12} /> {formatRelativeTime(act.date)}
-                  </span>
-                  {act.type === 'payment' ? (
-                    <span className="meta-badge method">{act.meta}</span>
-                  ) : (
-                    <span className={`meta-badge ${getStatusBadgeClass(act.meta)}`}>{act.meta}</span>
-                  )}
+                <div className="timeline-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span className="timeline-time">
+                      <Clock size={12} /> {formatRelativeTime(act.date)}
+                    </span>
+                    {act.type === 'payment' ? (
+                      <span className="meta-badge method">{act.meta}</span>
+                    ) : (
+                      <span className={`meta-badge ${getStatusBadgeClass(act.meta)}`}>{act.meta}</span>
+                    )}
+                  </div>
+                  <button 
+                    onClick={() => handleRemoveLogItem(act.type, act.id)}
+                    title="Remove entry from log"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
               </div>
             </div>

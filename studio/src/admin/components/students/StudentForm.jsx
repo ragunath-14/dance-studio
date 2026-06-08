@@ -68,6 +68,9 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
     if (!formData.classType) {
       errors.classType = "Please select a class type.";
     }
+    if (!formData.dayType) {
+      errors.dayType = "Please select a schedule type.";
+    }
     if (Object.keys(errors).length > 0) {
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 500);
@@ -303,6 +306,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
               {[
                 { value: 'Dance Class', icon: '💃', label: 'Dance Class' },
                 { value: 'Fitness Class', icon: '🏋️', label: 'Fitness Class' },
+                { value: 'Regular Class', icon: '🎵', label: 'Regular Class' },
               ].map(cls => (
                 <div
                   key={cls.value}
@@ -333,6 +337,29 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
             </div>
           )}
 
+          {/* Schedule Type Selection */}
+          <div className="class-cards-group">
+            <label className="sf-label-bold">Schedule Type <span>*</span></label>
+            <div className="class-cards-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              {[
+                { value: 'Weekdays', icon: '📅', label: 'Weekdays' },
+                { value: 'Weekend', icon: '🗓️', label: 'Weekend' },
+              ].map(day => (
+                <div
+                  key={day.value}
+                  onClick={() => { if (!isSubmitting) update('dayType', day.value); }}
+                  className={`class-selection-card ${formData.dayType === day.value ? 'selected' : ''}`}
+                >
+                  <span className="card-emoji">{day.icon}</span>
+                  <span className="card-text-label">{day.label}</span>
+                </div>
+              ))}
+            </div>
+            {stepErrors.dayType && (
+              <span className="field-error">{stepErrors.dayType}</span>
+            )}
+          </div>
+
           <div className="sf-group">
             <label className="sf-label">Additional Notes</label>
             <textarea
@@ -342,6 +369,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
               disabled={isSubmitting}
             />
           </div>
+
 
           <div className="form-actions-between">
             <button type="button" className="btn-secondary-custom" onClick={handleBack} disabled={isSubmitting}>
@@ -717,7 +745,7 @@ const StudentForm = ({ formData, setFormData, onCancel, isEditing, editingStuden
 
         .class-cards-grid {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1fr 1fr 1fr;
           gap: 14px;
         }
 

@@ -10,6 +10,10 @@ router.post('/send-pending-alerts', paymentController.sendPendingAlerts);
 // Send WhatsApp reminder to a SINGLE specific student (admin manual trigger)
 router.post('/send-reminder/:studentId', paymentController.sendStudentReminder);
 
+// Log clearing / soft-hiding routes
+router.post('/hide-all-logs', paymentController.hideAllPaymentLogs);
+router.put('/:id/hide-log', paymentController.hidePaymentLog);
+
 router.get('/', paymentController.getAllPayments);
 router.get('/student/:studentId', paymentController.getStudentPayments);
 router.post('/', paymentController.createPayment);

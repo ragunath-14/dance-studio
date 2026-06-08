@@ -8,7 +8,12 @@ const StudentRow = ({ student, onEdit, onDelete, onToggleStatus, onViewHistory }
 
   const isPaid = useMemo(() => {
     const today = new Date();
-    const getMonthlyFee = (student) => student.fee ?? (student.classType === 'Fitness Class' ? 2500 : 3500);
+    // Age-based fee consistent with backend: Kids (≤9) → ₹1500, Adults (>9) → ₹2500
+    const getMonthlyFee = (student) => {
+      if (student.fee && student.fee > 0) return student.fee;
+      const ageNum = parseInt(student.studentAge, 10);
+      return !isNaN(ageNum) && ageNum <= 9 ? 1500 : 2500;
+    };
     
     const rawJoinDate = student.createdAt || student.joinDate || new Date().toISOString();
     const joinDate = new Date(rawJoinDate);

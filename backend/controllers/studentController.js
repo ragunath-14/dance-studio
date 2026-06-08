@@ -96,7 +96,7 @@ exports.getDashboardStats = async (req, res) => {
 
     // Parallel fetch — aggregate monthly-fee totals per student in one DB call
     const [students, monthlyFeePaidMap, monthRevenue, lifetimeRevenue, pendingRegistrations, recentRegistrations] = await Promise.all([
-      Student.find().select('studentName phone whatsappNumber classType isActive createdAt lastAlertSent').lean(),
+      Student.find().select('studentName phone whatsappNumber classType studentAge isActive createdAt lastAlertSent').lean(),
       // O(M) aggregation: total Monthly Fee paid per student (all time)
       Payment.aggregate([
         { $match: { purpose: 'Monthly Fee' } },
@@ -121,7 +121,10 @@ exports.getDashboardStats = async (req, res) => {
       // Pending registrations for badge count
       Registration.find({ status: 'pending' }).lean(),
       // All registrations from last 24h for activity feed
-      Registration.find({ createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
+      Registration.find({
+        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        hiddenInLog: { $ne: true }
+      })
         .sort({ createdAt: -1 }).limit(10).lean()
     ]);
 
@@ -140,7 +143,8 @@ exports.getDashboardStats = async (req, res) => {
         $or: [
           { date: { $gte: since24h } },
           { createdAt: { $gte: since24h } }
-        ]
+        ],
+        hiddenInLog: { $ne: true }
       })
       .populate('studentId', 'studentName')
       .sort({ date: -1 })
@@ -217,7 +221,7 @@ exports.getUnpaidStudents = async (req, res) => {
   try {
     const today = new Date();
     const [students, monthlyFeePaidMap] = await Promise.all([
-      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType isActive createdAt lastAlertSent').lean(),
+      Student.find({ isActive: { $ne: false } }).select('studentName phone whatsappNumber classType studentAge isActive createdAt lastAlertSent').lean(),
       Payment.aggregate([
         { $match: { purpose: 'Monthly Fee' } },
         { $group: { _id: '$studentId', totalPaid: { $sum: '$amount' } } }

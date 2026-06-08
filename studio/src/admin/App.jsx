@@ -34,7 +34,7 @@ function App() {
 
   return (
     <Router>
-      <DataProvider>
+      <DataProvider isAuthenticated={isAuthenticated}>
         <Routes>
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
           
